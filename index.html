@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Encode sound with acoustic FM modulation and recover it directly in your browser."
+    />
+    <title>Acoustic FM</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/wavesurfer.js@7.12.11/dist/wavesurfer.min.js"
+    ></script>
+    <script type="module" src="./src/main.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="Acoustic FM — home">
+        <span class="brand-mark" aria-hidden="true">FM</span>
+        <span>Acoustic FM</span>
+      </a>
+      <span class="local-badge"><span></span>Runs locally</span>
+    </header>
+
+    <main>
+      <div id="app-status" class="app-status" role="status" aria-live="polite" hidden></div>
+
+      <section class="signal-flow" aria-label="FM encoding and decoding">
+        <article class="stage-card" id="source-card">
+          <header class="stage-header">
+            <span class="step-number">1</span>
+            <div>
+              <p class="eyebrow">INPUT</p>
+              <h1>Message</h1>
+            </div>
+          </header>
+
+          <div id="source-chooser">
+            <div id="source-dropzone" class="dropzone" tabindex="0" role="button">
+              <div class="drop-icon" aria-hidden="true">＋</div>
+              <strong>Drop an audio file</strong>
+              <span>WAV, MP3, M4A, OGG</span>
+              <div class="source-actions">
+                <button id="source-file-button" class="button button-secondary" type="button">
+                  Choose file
+                </button>
+                <button id="record-button" class="button button-secondary record-button" type="button">
+                  <span class="record-dot" aria-hidden="true"></span>
+                  <span id="record-label">Record voice</span>
+                </button>
+              </div>
+            </div>
+            <input id="source-file" type="file" accept="audio/*" hidden />
+            <div class="example-section">
+              <div class="or-divider example-divider"><span>sample recordings</span></div>
+              <div id="example-list" class="example-list" aria-label="Sample recordings"></div>
+              <button id="source-chooser-cancel" class="text-button chooser-cancel" type="button" hidden>
+                Back to current recording
+              </button>
+            </div>
+          </div>
+
+          <div id="source-loaded" class="loaded-content" hidden>
+            <div class="file-row">
+              <div class="file-copy">
+                <strong id="source-name">Recording</strong>
+                <span id="source-meta">—</span>
+              </div>
+              <div class="file-row-actions">
+                <button id="source-record-again" class="text-button record-again" type="button">
+                  <span aria-hidden="true">●</span> Record
+                </button>
+                <button id="source-replace" class="text-button" type="button">Change source</button>
+              </div>
+            </div>
+
+            <div class="wave-shell source-wave">
+              <div id="source-waveform" class="waveform"></div>
+            </div>
+            <div class="player-row">
+              <button id="source-play" class="play-button" type="button" aria-label="Play message">▶</button>
+              <span id="source-time" class="timecode">0:00 / 0:00</span>
+            </div>
+          </div>
+        </article>
+
+        <div class="flow-arrow" aria-hidden="true">
+          <span></span>
+        </div>
+
+        <article class="stage-card fm-card" id="fm-card">
+          <header class="stage-header">
+            <span class="step-number">2</span>
+            <div>
+              <p class="eyebrow">MODULATION</p>
+              <h2>FM signal</h2>
+            </div>
+            <span id="fm-origin" class="state-badge" hidden></span>
+          </header>
+
+          <div class="parameter-block">
+            <label class="parameter-label" for="carrier">
+              <span>Carrier</span>
+              <output id="carrier-value">18.0 kHz</output>
+            </label>
+            <input id="carrier" type="range" min="5000" max="20000" step="100" value="18000" />
+
+            <label class="parameter-label" for="deviation">
+              <span>Deviation</span>
+              <output id="deviation-value">±1.0 kHz</output>
+            </label>
+            <input id="deviation" type="range" min="250" max="2500" step="250" value="1000" />
+
+            <div class="frequency-range">
+              <span>Instantaneous range</span>
+              <strong id="frequency-range">17.0–19.0 kHz</strong>
+            </div>
+            <p id="parameter-warning" class="inline-warning" hidden></p>
+          </div>
+
+          <button id="encode-button" class="button button-primary button-wide" type="button" disabled>
+            Encode message
+          </button>
+
+          <div class="or-divider"><span>or</span></div>
+          <button id="fm-file-button" class="button button-quiet button-wide" type="button">
+            Load your own FM signal
+          </button>
+          <input id="fm-file" type="file" accept="audio/*" hidden />
+
+          <div id="fm-loaded" class="loaded-content fm-loaded" hidden>
+            <div class="file-row">
+              <div class="file-copy">
+                <strong id="fm-name">FM signal</strong>
+                <span id="fm-meta">—</span>
+              </div>
+              <span id="fm-stale" class="stale-label" hidden>Settings changed</span>
+            </div>
+            <div class="wave-shell fm-wave">
+              <div id="fm-waveform" class="waveform"></div>
+            </div>
+            <div class="player-row">
+              <button id="fm-play" class="play-button" type="button" aria-label="Play FM signal">▶</button>
+              <span id="fm-time" class="timecode">0:00 / 0:00</span>
+              <span class="safe-volume" title="Playback volume is limited">12%</span>
+              <button id="fm-download" class="download-button" type="button">Download WAV</button>
+            </div>
+            <button id="decode-button" class="button button-accent button-wide" type="button">
+              Decode signal
+            </button>
+          </div>
+        </article>
+
+        <div class="flow-arrow" aria-hidden="true">
+          <span></span>
+        </div>
+
+        <article class="stage-card result-card" id="result-card">
+          <header class="stage-header">
+            <span class="step-number">3</span>
+            <div>
+              <p class="eyebrow">DEMODULATION</p>
+              <h2>Recovered audio</h2>
+            </div>
+          </header>
+
+          <div id="result-empty" class="result-empty">
+            <div class="result-placeholder" aria-hidden="true">≈</div>
+            <strong>Your result will appear here</strong>
+            <span>Prepare an FM signal first</span>
+          </div>
+
+          <div id="result-loaded" class="loaded-content result-loaded" hidden>
+            <div class="file-row">
+              <div class="file-copy">
+                <strong>Recovered message</strong>
+                <span id="result-meta">—</span>
+              </div>
+              <span class="state-badge success-badge">Ready</span>
+            </div>
+            <div class="wave-shell result-wave">
+              <div id="result-waveform" class="waveform"></div>
+            </div>
+            <div class="player-row">
+              <button id="result-play" class="play-button" type="button" aria-label="Play recovered audio">▶</button>
+              <span id="result-time" class="timecode">0:00 / 0:00</span>
+              <button id="result-download" class="download-button" type="button">Download WAV</button>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <p class="safety-note">
+        <span aria-hidden="true">◌</span>
+        Play high-frequency signals at a low volume.
+      </p>
+    </main>
+  </body>
+</html>
