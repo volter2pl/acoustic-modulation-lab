@@ -69,9 +69,19 @@ function textBytes(text, length) {
   const bytes = [];
   for (const character of text.slice(0, length)) {
     const code = character.charCodeAt(0);
-    bytes.push(code >= 0x20 && code <= 0x7e ? code : 0x3f);
+    if (code < 0x20 || code > 0x7e) {
+      throw new RangeError("Scaled RDS text supports printable ASCII characters only.");
+    }
+    bytes.push(code);
   }
   return bytes;
+}
+
+export function isSupportedRdsText(text) {
+  return [...text].every((character) => {
+    const code = character.charCodeAt(0);
+    return code >= 0x20 && code <= 0x7e;
+  });
 }
 
 function createPsGroups(text) {

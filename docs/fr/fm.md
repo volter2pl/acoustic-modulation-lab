@@ -98,6 +98,9 @@ Les modes disponibles sont :
 - **PS** — nom de service de programme sur huit caractères dans des groupes 0A ;
 - **RadioText** — jusqu’à 64 caractères dans des groupes 2A.
 
+Les champs PS et RadioText acceptent les caractères ASCII imprimables. Un texte
+non pris en charge est signalé avant l’encodage au lieu d’être modifié en silence.
+
 Le modèle produit les blocs et mots de contrôle RDS, le codage différentiel et
 les symboles biphase. Le récepteur récupère des groupes valides dans la forme
 d’onde démodulée ; le texte n’est pas stocké comme métadonnée du WAV. Si la
@@ -143,6 +146,13 @@ sous forme de porteuse non modulée. Les commandes de niveau modifient la
 puissance de chaque station, tandis que le mélangeur réserve une marge pour les
 trois émetteurs.
 
+Le récepteur utilise un filtre de canal raide en bande de base complexe et
+n’applique pas de squelch. Une station isolée s’atténue lorsqu’elle quitte le
+canal sélectionné. Entre deux canaux occupés, des parties des deux spectres
+peuvent entrer dans le filtre ; la capture, les interférences et le son déformé
+restent donc audibles. Le discriminateur limite les sauts de phase extrêmes afin
+d’éviter l’écrêtage.
+
 ## Points à observer
 
 - Les porteuses basses s’entendent plus facilement comme un sifflement variable.
@@ -151,8 +161,8 @@ trois émetteurs.
   varie.
 - Le RDS crée des composantes multiplex haute fréquence visibles avant la
   modulation FM.
-- Entre deux stations, le récepteur rejette les porteuses hors de son filtre en
-  bande de base.
+- Entre les stations, on entend l’atténuation, la capture et les interférences,
+  plutôt qu’une coupure automatique.
 
 La FM n’est pas une copie discrète de la source cachée sous une tonalité. C’est
 une forme d’onde continue dont la phase accumulée transporte l’enregistrement.

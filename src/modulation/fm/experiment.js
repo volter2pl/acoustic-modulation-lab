@@ -10,12 +10,14 @@ import {
   createRadioBand,
   RADIO_BAND_DEVIATION,
   RADIO_BAND_MESSAGE_BANDWIDTH,
+  RADIO_BAND_STATION_LEVEL,
   RADIO_STATION_CARRIERS,
   receiveRadioStation,
 } from "./radio-band.js";
 import {
   createRdsComposite,
   decodeRdsComposite,
+  isSupportedRdsText,
   RDS_AUDIO_BANDWIDTH,
   RDS_AUDIO_FILTER_ORDER,
   RDS_BASEBAND_BANDWIDTH,
@@ -53,6 +55,9 @@ export const FM_EXPERIMENT = Object.freeze({
         ? DEFAULT_MESSAGE_BANDWIDTH
         : RDS_BASEBAND_BANDWIDTH;
     const occupiedHalfBandwidth = parameters.deviation + messageBandwidth;
+    if (rds.mode !== RDS_MODES.NONE && !isSupportedRdsText(rds.text)) {
+      return "validation.rdsTextCharacters";
+    }
     if (parameters.carrier + parameters.deviation >= nyquist) {
       return "validation.fmInstantaneousNyquist";
     }
@@ -156,6 +161,7 @@ export const FM_EXPERIMENT = Object.freeze({
       processorOptions: {
         deviation: RADIO_BAND_DEVIATION,
         messageBandwidth: RADIO_BAND_MESSAGE_BANDWIDTH,
+        selectionReferenceLevel: RADIO_BAND_STATION_LEVEL,
       },
       onStateChanged,
     });

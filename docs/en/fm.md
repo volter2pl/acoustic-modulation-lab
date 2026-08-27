@@ -93,6 +93,9 @@ The available modes are:
 - **PS** — an eight-character Programme Service name in 0A groups;
 - **RadioText** — up to 64 characters in 2A groups.
 
+PS and RadioText input accepts printable ASCII characters. Unsupported text is
+reported before encoding instead of being changed silently.
+
 The model generates RDS blocks, checkwords, differential coding, and biphase
 symbols. The receiver recovers valid groups from the demodulated waveform; text
 is not stored as WAV metadata. If the source is too short for one complete data
@@ -129,13 +132,20 @@ When a programme ends, its message becomes zero and the station continues as an
 unmodulated carrier. Signal-level controls alter station strength, while the
 mixer reserves headroom for all three transmitters.
 
+The receiver uses a steep complex-baseband channel filter and does not apply a
+squelch. An isolated station becomes quieter as it leaves the selected channel.
+Between two occupied channels, parts of both spectra can enter the filter, so
+capture, interference, and distorted audio remain audible. The discriminator
+limits extreme phase jumps to keep those experiments below clipping.
+
 ## What to observe
 
 - Lower carriers are easier to hear as a varying whistle.
 - Greater deviation spreads energy farther from the carrier.
 - The carrier stays at constant amplitude while its cycle rate changes.
 - RDS creates visible high-frequency multiplex components before FM modulation.
-- Between stations, the receiver rejects carriers outside its baseband filter.
+- Between stations, listen for attenuation, capture, and interference rather
+  than an automatic mute.
 
 FM is not a quiet copy of the source hidden beneath a tone. It is one continuous
 waveform whose accumulated phase carries the recording.

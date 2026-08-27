@@ -99,6 +99,9 @@ Folgende Modi stehen zur Verfügung:
   0A-Gruppen;
 - **RadioText** — bis zu 64 Zeichen in 2A-Gruppen.
 
+PS- und RadioText-Eingaben akzeptieren druckbare ASCII-Zeichen. Nicht
+unterstützter Text wird vor der Codierung gemeldet und nicht still verändert.
+
 Das Modell erzeugt RDS-Blöcke, Prüfwörter, Differenzcodierung und
 Biphase-Symbole. Der Empfänger gewinnt gültige Gruppen aus der demodulierten
 Wellenform zurück; der Text wird nicht als WAV-Metadaten gespeichert. Ist die
@@ -139,6 +142,13 @@ Endet ein Programm, wird sein Nachrichtensignal null und der Sender läuft als
 unmodulierter Träger weiter. Die Signalpegelregler verändern die Stärke der
 Sender, während der Mischer Aussteuerungsreserve für alle drei Sender lässt.
 
+Der Empfänger verwendet ein steiles Kanalfilter im komplexen Basisband und
+keine Rauschsperre. Ein einzelner Sender wird leiser, wenn er den gewählten
+Kanal verlässt. Zwischen zwei belegten Kanälen können Teile beider Spektren in
+das Filter gelangen; Übernahmeeffekte, Interferenzen und verzerrter Ton bleiben
+daher hörbar. Der Diskriminator begrenzt extreme Phasensprünge, um Übersteuerung
+zu vermeiden.
+
 ## Was zu beobachten ist
 
 - Tiefere Träger sind leichter als veränderlicher Pfeifton zu hören.
@@ -147,8 +157,8 @@ Sender, während der Mischer Aussteuerungsreserve für alle drei Sender lässt.
   ändert.
 - RDS erzeugt vor der FM-Modulation sichtbare hochfrequente
   Multiplexkomponenten.
-- Zwischen den Sendern unterdrückt der Empfänger Träger außerhalb seines
-  Basisbandfilters.
+- Zwischen den Sendern sind Dämpfung, Übernahmeeffekte und Interferenzen statt
+  einer automatischen Stummschaltung zu hören.
 
 FM ist keine leise Kopie der Quelle, die unter einem Ton verborgen liegt. Es
 handelt sich um eine einzige kontinuierliche Wellenform, deren akkumulierte

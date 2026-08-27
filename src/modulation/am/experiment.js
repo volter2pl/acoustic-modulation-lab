@@ -1,7 +1,7 @@
 import { prepareMessage } from "../../audio.js";
 import { LiveRadioReceiver } from "../../live-receiver.js";
 import { DEFAULT_AM_MESSAGE_BANDWIDTH, demodulateAM } from "./demodulator.js";
-import { modulateAM } from "./modulator.js";
+import { AM_CARRIER_AMPLITUDE, modulateAM } from "./modulator.js";
 import {
   AM_BAND_MESSAGE_BANDWIDTH,
   AM_BAND_MODULATION_DEPTH,
@@ -84,6 +84,11 @@ export const AM_EXPERIMENT = Object.freeze({
             sampleRate,
             parameters.carrier,
             DEFAULT_AM_MESSAGE_BANDWIDTH,
+            {
+              outputGain:
+                1 /
+                (AM_CARRIER_AMPLITUDE * (parameters.modulationDepth / 100)),
+            },
           );
     return { samples, data: null, dataExpected: false };
   },

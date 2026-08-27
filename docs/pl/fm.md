@@ -96,6 +96,9 @@ Dostępne są trzy tryby:
 - **PS** — ośmioznakowa nazwa Programme Service w grupach 0A;
 - **RadioText** — do 64 znaków w grupach 2A.
 
+Pola PS i RadioText przyjmują drukowalne znaki ASCII. Nieobsługiwany tekst jest
+zgłaszany przed kodowaniem zamiast cichej zamiany znaków.
+
 Model generuje bloki RDS, słowa kontrolne, kodowanie różnicowe i symbole
 dwufazowe. Odbiornik odzyskuje poprawne grupy z demodulowanego przebiegu; tekst
 nie jest przechowywany jako metadane WAV. Jeżeli źródło jest zbyt krótkie, aby
@@ -134,6 +137,13 @@ Gdy program się kończy, jego wiadomość przyjmuje wartość zero, a stacja
 pozostaje niemodulowaną nośną. Regulatory poziomu zmieniają siłę stacji, a
 mikser zachowuje zapas amplitudy dla wszystkich trzech nadajników.
 
+Odbiornik używa stromego filtra kanałowego w zespolonym paśmie podstawowym i
+nie stosuje blokady szumów. Odizolowana stacja cichnie w miarę wychodzenia z
+wybranego kanału. Pomiędzy dwoma zajętymi kanałami fragmenty obu widm mogą
+wejść do filtra, dlatego nadal słychać efekt przechwytywania, interferencje i
+zniekształcony dźwięk. Dyskryminator ogranicza skrajne skoki fazy, aby takie
+eksperymenty nie powodowały przesterowania.
+
 ## Co warto obserwować
 
 - Niższe nośne łatwiej usłyszeć jako zmieniający się gwizd.
@@ -141,8 +151,8 @@ mikser zachowuje zapas amplitudy dla wszystkich trzech nadajników.
 - Amplituda nośnej pozostaje stała, podczas gdy zmienia się tempo jej cykli.
 - RDS tworzy widoczne składowe multipleksu o wysokiej częstotliwości jeszcze
   przed modulacją FM.
-- Pomiędzy stacjami odbiornik odrzuca nośne pozostające poza jego filtrem pasma
-  podstawowego.
+- Pomiędzy stacjami warto słuchać tłumienia, przechwytywania i interferencji,
+  a nie automatycznego wyciszenia.
 
 FM nie jest cichą kopią źródła ukrytą pod tonem. To jeden ciągły przebieg,
 którego zakumulowana faza przenosi nagranie.

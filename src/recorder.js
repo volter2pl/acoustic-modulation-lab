@@ -1,3 +1,7 @@
+import { MAX_DURATION_SECONDS } from "./audio.js";
+
+const ENCODER_STOP_GUARD_MS = 500;
+
 /**
  * Small adapter around MediaRecorder.
  *
@@ -11,6 +15,7 @@ export class MicrophoneRecorder {
     this.chunks = [];
     this.startedAt = 0;
     this.timer = null;
+    this.limitTimer = null;
   }
 
   get isRecording() {
@@ -34,7 +39,7 @@ export class MicrophoneRecorder {
     });
 
     this.chunks = [];
-    this.mediaRecorder = new MediaRecorder(this.stream);
+    this.mediaRecorder = new window.MediaRecorder(this.stream);
     this.mediaRecorder.addEventListener("dataavailable", (event) => {
       if (event.data.size) this.chunks.push(event.data);
     });
@@ -50,6 +55,12 @@ export class MicrophoneRecorder {
     this.startedAt = Date.now();
     onProgress(0);
     this.timer = setInterval(() => onProgress((Date.now() - this.startedAt) / 1000), 250);
+    // Compressed recorders finish on codec-frame boundaries. Stop just before
+    // the public limit so the decoded result does not exceed it by one frame.
+    this.limitTimer = setTimeout(
+      () => this.stop(),
+      MAX_DURATION_SECONDS * 1000 - ENCODER_STOP_GUARD_MS,
+    );
   }
 
   stop() {
@@ -59,6 +70,8 @@ export class MicrophoneRecorder {
   cleanupStream() {
     clearInterval(this.timer);
     this.timer = null;
+    clearTimeout(this.limitTimer);
+    this.limitTimer = null;
     this.stream?.getTracks().forEach((track) => track.stop());
     this.stream = null;
   }

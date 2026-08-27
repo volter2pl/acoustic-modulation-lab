@@ -55,6 +55,7 @@ export function receiveAmStation(channel, sampleRate, tunedCarrier) {
     sampleRate,
     tunedCarrier,
     AM_BAND_MESSAGE_BANDWIDTH,
+    { outputGain: getAmBandReceiverGain() },
   );
 }
 

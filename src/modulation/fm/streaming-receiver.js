@@ -1,4 +1,14 @@
-import { BiquadLowpass } from "../../filters.js";
+import {
+  BiquadLowpass,
+  createButterworthLowpassSections,
+} from "../../filters.js";
+
+const CHANNEL_FILTER_ORDER = 12;
+const CHANNEL_CUTOFF_MARGIN = 1.05;
+// Full programme level is retained for a normally received station. Below
+// that level the discriminator is weighted continuously, never hard-muted.
+const FULL_CONFIDENCE_RATIO = 0.75;
+const DISCRIMINATOR_LIMIT = 0.9;
 
 /**
  * A sample-by-sample FM receiver suitable for an AudioWorklet.
@@ -13,7 +23,7 @@ export class StreamingFmReceiver {
     carrier,
     deviation,
     messageBandwidth,
-    { outputGain = 0.92 } = {},
+    { outputGain = 0.92, selectionReferenceLevel = null } = {},
   ) {
     if (sampleRate <= 0 || carrier <= 0 || deviation <= 0 || messageBandwidth <= 0) {
       throw new RangeError("Receiver parameters must be positive.");
@@ -22,6 +32,7 @@ export class StreamingFmReceiver {
     this.sampleRate = sampleRate;
     this.deviation = deviation;
     this.outputGain = outputGain;
+    this.selectionReferenceLevel = selectionReferenceLevel;
     this.phaseScale = (2 * Math.PI) / sampleRate;
     this.frequencyScale = sampleRate / (2 * Math.PI * deviation);
     this.oscillatorPhase = 0;
@@ -34,17 +45,19 @@ export class StreamingFmReceiver {
     this.setCarrier(carrier);
 
     const basebandCutoff = Math.min(
-      (deviation + messageBandwidth) * 1.15,
+      (deviation + messageBandwidth) * CHANNEL_CUTOFF_MARGIN,
       sampleRate * 0.4,
     );
-    this.iFilters = [
-      new BiquadLowpass(sampleRate, basebandCutoff),
-      new BiquadLowpass(sampleRate, basebandCutoff),
-    ];
-    this.qFilters = [
-      new BiquadLowpass(sampleRate, basebandCutoff),
-      new BiquadLowpass(sampleRate, basebandCutoff),
-    ];
+    this.iFilters = createButterworthLowpassSections(
+      sampleRate,
+      basebandCutoff,
+      CHANNEL_FILTER_ORDER,
+    );
+    this.qFilters = createButterworthLowpassSections(
+      sampleRate,
+      basebandCutoff,
+      CHANNEL_FILTER_ORDER,
+    );
     this.audioFilters = [
       new BiquadLowpass(sampleRate, messageBandwidth),
       new BiquadLowpass(sampleRate, messageBandwidth),
@@ -71,10 +84,11 @@ export class StreamingFmReceiver {
     for (const filter of this.iFilters) i = filter.process(i);
     for (const filter of this.qFilters) q = filter.process(q);
 
+    const magnitude = Math.hypot(i, q);
     let recovered = 0;
     if (this.hasPreviousIq) {
       const magnitudeProduct =
-        Math.hypot(i, q) * Math.hypot(this.previousI, this.previousQ);
+        magnitude * Math.hypot(this.previousI, this.previousQ);
       if (magnitudeProduct > 1e-7) {
         const cross = q * this.previousI - i * this.previousQ;
         const dot = i * this.previousI + q * this.previousQ;
@@ -93,7 +107,21 @@ export class StreamingFmReceiver {
     this.previousInput = recovered;
     this.previousDcOutput = withoutDc;
 
-    let output = withoutDc;
+    // An ideal phase discriminator can decode an arbitrarily attenuated FM
+    // residue in a noiseless simulation. Magnitude weighting gives the channel
+    // filter meaningful selectivity while preserving audible off-channel
+    // interference instead of implementing a squelch.
+    const selectionConfidence = this.selectionReferenceLevel > 0
+      ? Math.min(
+          1,
+          magnitude /
+            (this.selectionReferenceLevel * FULL_CONFIDENCE_RATIO),
+        )
+      : 1;
+    let output = Math.max(
+      -DISCRIMINATOR_LIMIT,
+      Math.min(DISCRIMINATOR_LIMIT, withoutDc),
+    ) * selectionConfidence;
     for (const filter of this.audioFilters) output = filter.process(output);
     return Math.max(-1, Math.min(1, output * this.outputGain));
   }

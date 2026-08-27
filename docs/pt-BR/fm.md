@@ -98,6 +98,9 @@ Os modos disponíveis são:
   0A;
 - **RadioText** — até 64 caracteres em grupos 2A.
 
+Os campos PS e RadioText aceitam caracteres ASCII imprimíveis. Texto não
+compatível é informado antes da codificação, sem substituição silenciosa.
+
 O modelo gera blocos RDS, palavras de verificação, codificação diferencial e
 símbolos bifásicos. O receptor recupera grupos válidos da forma de onda
 demodulada; o texto não é armazenado como metadados WAV. Se a fonte for curta
@@ -137,6 +140,12 @@ Quando um programa termina, sua mensagem passa a ser zero, e a estação continu
 como uma portadora não modulada. Os controles de nível do sinal alteram a força
 de cada estação, enquanto o mixer reserva margem para os três transmissores.
 
+O receptor usa um filtro de canal acentuado na banda base complexa e não aplica
+squelch. Uma estação isolada fica mais fraca ao sair do canal selecionado.
+Entre dois canais ocupados, partes dos dois espectros podem entrar no filtro;
+por isso, captura, interferência e áudio distorcido continuam audíveis. O
+discriminador limita saltos extremos de fase para evitar saturação.
+
 ## O que observar
 
 - Portadoras mais baixas são mais fáceis de ouvir como um assobio variável.
@@ -145,8 +154,8 @@ de cada estação, enquanto o mixer reserva margem para os três transmissores.
   oscilação muda.
 - O RDS cria componentes multiplex visíveis de alta frequência antes da
   modulação FM.
-- Entre as estações, o receptor rejeita portadoras fora de seu filtro de banda
-  base.
+- Entre as estações, ouvem-se atenuação, captura e interferência, não um
+  silenciamento automático.
 
 FM não é uma cópia silenciosa da fonte escondida sob um tom. É uma única forma
 de onda contínua cuja fase acumulada transporta a gravação.

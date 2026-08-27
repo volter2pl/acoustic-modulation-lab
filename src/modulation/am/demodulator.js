@@ -1,4 +1,4 @@
-import { fadeEdges, normalize } from "../../filters.js";
+import { fadeEdges } from "../../filters.js";
 import { StreamingAmReceiver } from "./streaming-receiver.js";
 
 export const DEFAULT_AM_MESSAGE_BANDWIDTH = 2400;
@@ -9,6 +9,7 @@ export function demodulateAM(
   sampleRate,
   carrier,
   messageBandwidth = DEFAULT_AM_MESSAGE_BANDWIDTH,
+  { outputGain = 1 } = {},
 ) {
   if (!(signal instanceof Float32Array)) {
     throw new TypeError("The AM signal must be a Float32Array.");
@@ -20,7 +21,10 @@ export function demodulateAM(
   );
   const recovered = new Float32Array(signal.length);
   for (let index = 0; index < signal.length; index += 1) {
-    recovered[index] = receiver.process(signal[index]);
+    recovered[index] = Math.max(
+      -1,
+      Math.min(1, receiver.process(signal[index]) * outputGain),
+    );
   }
-  return fadeEdges(normalize(recovered, 0.92), sampleRate, 0.015);
+  return fadeEdges(recovered, sampleRate, 0.05);
 }

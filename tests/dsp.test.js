@@ -19,6 +19,7 @@ import { AUDIO_EXAMPLES } from "../src/examples.js";
 import { modulateFM } from "../src/modulation/fm/modulator.js";
 import {
   createRadioBand,
+  RADIO_BAND_OUTPUT_LEVEL,
   RADIO_STATION_CARRIERS,
   receiveRadioStation,
 } from "../src/modulation/fm/radio-band.js";
@@ -32,6 +33,7 @@ import {
 } from "../src/modulation/fm/rds.js";
 import { encodeWav } from "../src/wav.js";
 import { SpectrumPlayer } from "../src/spectrum.js";
+import { MicrophoneRecorder } from "../src/recorder.js";
 import { StreamingFmReceiver } from "../src/modulation/fm/streaming-receiver.js";
 import {
   createI18n,
@@ -86,6 +88,16 @@ function peakBetween(signal, sampleRate, startSeconds, endSeconds) {
     peak = Math.max(peak, Math.abs(signal[index]));
   }
   return peak;
+}
+
+function rmsBetween(signal, sampleRate, startSeconds, endSeconds) {
+  const start = Math.floor(startSeconds * sampleRate);
+  const end = Math.min(signal.length, Math.floor(endSeconds * sampleRate));
+  let energy = 0;
+  for (let index = start; index < end; index += 1) {
+    energy += signal[index] * signal[index];
+  }
+  return Math.sqrt(energy / Math.max(1, end - start));
 }
 
 test("the modulator and demodulator recover a sinusoidal message", () => {
@@ -182,7 +194,7 @@ test("one radio band carries three independently tunable FM stations", () => {
         toneAmplitude(received, sampleRate, otherFrequency, 0.1, 1.9),
       );
 
-    assert.ok(wanted > 0.9);
+    assert.ok(wanted > 0.55);
     assert.ok(unwanted.every((level) => level < 0.001));
   });
 });
@@ -216,6 +228,106 @@ test("a streaming receiver changes stations without restarting the radio band", 
   assert.ok(toneAmplitude(output, sampleRate, frequencies[0], 1.15, 1.85) < 0.001);
 });
 
+test("FM channel selection attenuates an isolated station when the receiver is detuned", () => {
+  const sampleRate = 48000;
+  const message = Float32Array.from(
+    { length: sampleRate * 2 },
+    (_, index) => 0.7 * Math.sin((2 * Math.PI * 440 * index) / sampleRate),
+  );
+  const stationLevel = RADIO_BAND_OUTPUT_LEVEL;
+  const station = createRadioBand([message], sampleRate, {
+    carriers: [5000],
+  });
+  const tuned = new StreamingFmReceiver(
+    sampleRate,
+    5000,
+    750,
+    2000,
+    { selectionReferenceLevel: stationLevel },
+  );
+  const detuned = new StreamingFmReceiver(
+    sampleRate,
+    8500,
+    750,
+    2000,
+    { selectionReferenceLevel: stationLevel },
+  );
+  const tunedOutput = Float32Array.from(station, (sample) => tuned.process(sample));
+  const detunedOutput = Float32Array.from(station, (sample) => detuned.process(sample));
+  const tunedLevel = rmsBetween(tunedOutput, sampleRate, 0.25, 1.75);
+  const detunedLevel = rmsBetween(detunedOutput, sampleRate, 0.25, 1.75);
+  const tunedSnapshot = demodulateFM(
+    station,
+    sampleRate,
+    5000,
+    750,
+    2000,
+    { selectionReferenceLevel: stationLevel },
+  );
+  const detunedSnapshot = demodulateFM(
+    station,
+    sampleRate,
+    8500,
+    750,
+    2000,
+    { selectionReferenceLevel: stationLevel },
+  );
+  const tunedSnapshotLevel = rmsBetween(
+    tunedSnapshot,
+    sampleRate,
+    0.25,
+    1.75,
+  );
+  const detunedSnapshotLevel = rmsBetween(
+    detunedSnapshot,
+    sampleRate,
+    0.25,
+    1.75,
+  );
+
+  assert.ok(tunedLevel > 0.35);
+  assert.ok(detunedLevel > 0.0001, "the receiver should not behave like a hard squelch");
+  assert.ok(
+    detunedLevel < tunedLevel * 0.2,
+    `expected detuned level below 20% of tuned level, received ${detunedLevel / tunedLevel}`,
+  );
+  assert.ok(detunedSnapshotLevel < tunedSnapshotLevel * 0.2);
+});
+
+test("FM tuning between stations remains audible without clipping", () => {
+  const sampleRate = 48000;
+  const frequencies = [300, 700, 1300];
+  const messages = frequencies.map((frequency) =>
+    Float32Array.from(
+      { length: sampleRate * 2 },
+      (_, index) => 0.7 * Math.sin((2 * Math.PI * frequency * index) / sampleRate),
+    ),
+  );
+  const band = createRadioBand(messages, sampleRate);
+  const stationLevel = RADIO_BAND_OUTPUT_LEVEL / messages.length;
+  const tuned = new StreamingFmReceiver(
+    sampleRate,
+    RADIO_STATION_CARRIERS[0],
+    750,
+    2000,
+    { selectionReferenceLevel: stationLevel },
+  );
+  const between = new StreamingFmReceiver(
+    sampleRate,
+    8500,
+    750,
+    2000,
+    { selectionReferenceLevel: stationLevel },
+  );
+  const tunedOutput = Float32Array.from(band, (sample) => tuned.process(sample));
+  const betweenOutput = Float32Array.from(band, (sample) => between.process(sample));
+  const tunedLevel = rmsBetween(tunedOutput, sampleRate, 0.25, 1.75);
+  const betweenLevel = rmsBetween(betweenOutput, sampleRate, 0.25, 1.75);
+
+  assert.ok(betweenLevel > 0.001, "between-station interference should remain audible");
+  assert.ok(peakBetween(betweenOutput, sampleRate, 0.25, 1.75) < 0.98);
+});
+
 test("a radio band follows the longest programme and remains below clipping", () => {
   const messages = [
     new Float32Array(12000).fill(0.5),
@@ -226,6 +338,25 @@ test("a radio band follows the longest programme and remains below clipping", ()
 
   assert.equal(band.length, 36000);
   assert.ok(band.every((sample) => Math.abs(sample) <= 0.780001));
+});
+
+test("an offline FM receiver does not normalize a weak station to full level", () => {
+  const sampleRate = 48000;
+  const messages = [300, 700, 1300].map((frequency) =>
+    Float32Array.from(
+      { length: sampleRate * 2 },
+      (_, index) => 0.7 * Math.sin((2 * Math.PI * frequency * index) / sampleRate),
+    ),
+  );
+  const fullBand = createRadioBand(messages, sampleRate, { levels: [1, 1, 1] });
+  const weakBand = createRadioBand(messages, sampleRate, { levels: [0.25, 1, 1] });
+  const full = receiveRadioStation(fullBand, sampleRate, RADIO_STATION_CARRIERS[0]);
+  const weak = receiveRadioStation(weakBand, sampleRate, RADIO_STATION_CARRIERS[0]);
+  const fullLevel = toneAmplitude(full, sampleRate, 300, 0.25, 1.75);
+  const weakLevel = toneAmplitude(weak, sampleRate, 300, 0.25, 1.75);
+
+  assert.ok(fullLevel > 0.6);
+  assert.ok(weakLevel / fullLevel > 0.25 && weakLevel / fullLevel < 0.45);
 });
 
 test("one AM radio band carries three independently tunable stations", () => {
@@ -255,6 +386,25 @@ test("one AM radio band carries three independently tunable stations", () => {
     assert.ok(unwanted.every((level) => level < 0.001));
   });
   assert.ok(band.every((sample) => Math.abs(sample) <= 0.780001));
+});
+
+test("an offline AM receiver preserves the selected station level", () => {
+  const sampleRate = 48000;
+  const messages = [300, 700, 1300].map((frequency) =>
+    Float32Array.from(
+      { length: sampleRate * 2 },
+      (_, index) => 0.7 * Math.sin((2 * Math.PI * frequency * index) / sampleRate),
+    ),
+  );
+  const fullBand = createAmRadioBand(messages, sampleRate, { levels: [1, 1, 1] });
+  const weakBand = createAmRadioBand(messages, sampleRate, { levels: [0.25, 1, 1] });
+  const full = receiveAmStation(fullBand, sampleRate, AM_STATION_CARRIERS[0]);
+  const weak = receiveAmStation(weakBand, sampleRate, AM_STATION_CARRIERS[0]);
+  const fullLevel = toneAmplitude(full, sampleRate, 300, 0.25, 1.75);
+  const weakLevel = toneAmplitude(weak, sampleRate, 300, 0.25, 1.75);
+
+  assert.ok(fullLevel > 0.55);
+  assert.ok(weakLevel / fullLevel > 0.2 && weakLevel / fullLevel < 0.3);
 });
 
 test("a streaming AM receiver retunes without restarting the shared band", () => {
@@ -372,6 +522,25 @@ test("scaled RDS recovers RadioText", () => {
   assert.equal(decoded?.text, "FM carries audio and data together.");
 });
 
+test("scaled RDS rejects unsupported text instead of silently replacing it", () => {
+  assert.throws(
+    () =>
+      createRdsComposite(new Float32Array(48000), 48000, {
+        mode: RDS_MODES.PS,
+        text: "ŁÓDŹ",
+      }),
+    /printable ASCII/,
+  );
+  assert.equal(
+    MODULATION_EXPERIMENTS.fm.validateSingle({
+      sampleRate: 48000,
+      parameters: { carrier: 12000, deviation: 1000 },
+      rds: { mode: RDS_MODES.PS, text: "ŁÓDŹ" },
+    }),
+    "validation.rdsTextCharacters",
+  );
+});
+
 test("scaled RDS survives the complete FM transmitter and receiver", () => {
   const sampleRate = 48000;
   const composite = createRdsComposite(new Float32Array(sampleRate), sampleRate, {
@@ -452,6 +621,96 @@ test("the WAV encoder creates a valid mono 16-bit PCM header", () => {
   assert.equal(view.getUint32(24, true), 48000);
   assert.equal(view.getUint16(34, true), 16);
   assert.equal(view.getUint32(40, true), 6);
+});
+
+test("microphone recording stops automatically at the input duration limit", async () => {
+  const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const originalSetInterval = globalThis.setInterval;
+  const originalClearInterval = globalThis.clearInterval;
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const listeners = new Map();
+  const track = { stopped: false, stop() { this.stopped = true; } };
+  let limitCallback = null;
+  let limitDelay = null;
+  let completed = 0;
+
+  class FakeMediaRecorder {
+    constructor() {
+      this.state = "inactive";
+      this.mimeType = "audio/webm";
+    }
+
+    addEventListener(name, listener) {
+      listeners.set(name, listener);
+    }
+
+    start() {
+      this.state = "recording";
+    }
+
+    stop() {
+      this.state = "inactive";
+      listeners.get("stop")?.();
+    }
+  }
+
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: {
+      mediaDevices: {
+        async getUserMedia() {
+          return { getTracks: () => [track] };
+        },
+      },
+    },
+  });
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: { MediaRecorder: FakeMediaRecorder },
+  });
+  globalThis.setInterval = () => 1;
+  globalThis.clearInterval = () => {};
+  globalThis.setTimeout = (callback, delay) => {
+    limitCallback = callback;
+    limitDelay = delay;
+    return 2;
+  };
+  globalThis.clearTimeout = () => {};
+
+  try {
+    const recorder = new MicrophoneRecorder();
+    await recorder.start({
+      onProgress() {},
+      async onComplete() {
+        completed += 1;
+      },
+    });
+
+    assert.equal(recorder.isRecording, true);
+    assert.equal(limitDelay, 119500);
+    limitCallback();
+    await Promise.resolve();
+    assert.equal(recorder.isRecording, false);
+    assert.equal(track.stopped, true);
+    assert.equal(completed, 1);
+  } finally {
+    if (originalNavigator) {
+      Object.defineProperty(globalThis, "navigator", originalNavigator);
+    } else {
+      delete globalThis.navigator;
+    }
+    if (originalWindow) {
+      Object.defineProperty(globalThis, "window", originalWindow);
+    } else {
+      delete globalThis.window;
+    }
+    globalThis.setInterval = originalSetInterval;
+    globalThis.clearInterval = originalClearInterval;
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
 });
 
 test("the sample manifest has unique IDs and references existing files", async () => {

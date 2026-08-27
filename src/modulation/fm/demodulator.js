@@ -1,6 +1,16 @@
-import { BiquadLowpass, lowpass, normalize, removeDc } from "../../filters.js";
+import {
+  createButterworthLowpassSections,
+  lowpass,
+  removeDc,
+} from "../../filters.js";
 
 const DEFAULT_MESSAGE_BANDWIDTH = 2400;
+const CHANNEL_FILTER_ORDER = 12;
+const CHANNEL_CUTOFF_MARGIN = 1.05;
+// See StreamingFmReceiver: this is a continuous confidence scale, not a
+// signal-present gate or squelch.
+const FULL_CONFIDENCE_RATIO = 0.75;
+const DISCRIMINATOR_LIMIT = 0.9;
 
 /**
  * Recover the message from a real-valued FM waveform with an I/Q discriminator.
@@ -19,6 +29,7 @@ export function demodulateFM(
   carrier,
   deviation,
   messageBandwidth = DEFAULT_MESSAGE_BANDWIDTH,
+  options = {},
 ) {
   const composite = demodulateFMComposite(
     signal,
@@ -26,8 +37,9 @@ export function demodulateFM(
     carrier,
     deviation,
     messageBandwidth,
+    options,
   );
-  return normalize(lowpass(composite, sampleRate, messageBandwidth, 2), 0.92);
+  return lowpass(composite, sampleRate, messageBandwidth, 2);
 }
 
 /**
@@ -41,6 +53,7 @@ export function demodulateFMComposite(
   carrier,
   deviation,
   basebandBandwidth,
+  { selectionReferenceLevel = null } = {},
 ) {
   if (!(signal instanceof Float32Array)) {
     throw new TypeError("The FM signal must be a Float32Array.");
@@ -50,20 +63,25 @@ export function demodulateFMComposite(
   }
 
   const basebandCutoff = Math.min(
-    (deviation + basebandBandwidth) * 1.15,
+    (deviation + basebandBandwidth) * CHANNEL_CUTOFF_MARGIN,
     carrier * 0.9,
     sampleRate * 0.4,
   );
-  const iFilters = [
-    new BiquadLowpass(sampleRate, basebandCutoff),
-    new BiquadLowpass(sampleRate, basebandCutoff),
-  ];
-  const qFilters = [
-    new BiquadLowpass(sampleRate, basebandCutoff),
-    new BiquadLowpass(sampleRate, basebandCutoff),
-  ];
+  const iFilters = createButterworthLowpassSections(
+    sampleRate,
+    basebandCutoff,
+    CHANNEL_FILTER_ORDER,
+  );
+  const qFilters = createButterworthLowpassSections(
+    sampleRate,
+    basebandCutoff,
+    CHANNEL_FILTER_ORDER,
+  );
 
   const recovered = new Float32Array(signal.length);
+  const selectionConfidence = selectionReferenceLevel > 0
+    ? new Float32Array(signal.length)
+    : null;
   const carrierStep = (2 * Math.PI * carrier) / sampleRate;
   const frequencyScale = sampleRate / (2 * Math.PI * deviation);
   let oscillatorPhase = 0;
@@ -80,13 +98,22 @@ export function demodulateFMComposite(
     for (const filter of qFilters) q = filter.process(q);
 
     if (index > 0) {
-      const magnitudeProduct = Math.hypot(i, q) * Math.hypot(previousI, previousQ);
+      const magnitude = Math.hypot(i, q);
+      const magnitudeProduct = magnitude * Math.hypot(previousI, previousQ);
       if (magnitudeProduct > 1e-7) {
         // Imaginary and real parts of z[n] * conjugate(z[n - 1]).
         const cross = q * previousI - i * previousQ;
         const dot = i * previousI + q * previousQ;
         const phaseDelta = Math.atan2(cross, dot);
+        const confidence = selectionReferenceLevel > 0
+          ? Math.min(
+              1,
+              magnitude /
+                (selectionReferenceLevel * FULL_CONFIDENCE_RATIO),
+            )
+          : 1;
         recovered[index] = phaseDelta * frequencyScale;
+        if (selectionConfidence) selectionConfidence[index] = confidence;
       }
     }
 
@@ -96,8 +123,14 @@ export function demodulateFMComposite(
 
   const withoutDc = removeDc(recovered);
   const transientLength = Math.min(Math.floor(sampleRate * 0.012), withoutDc.length);
-  for (let index = 0; index < transientLength; index += 1) {
-    withoutDc[index] *= index / Math.max(1, transientLength - 1);
+  for (let index = 0; index < withoutDc.length; index += 1) {
+    const fade = index < transientLength
+      ? index / Math.max(1, transientLength - 1)
+      : 1;
+    withoutDc[index] = Math.max(
+      -DISCRIMINATOR_LIMIT,
+      Math.min(DISCRIMINATOR_LIMIT, withoutDc[index]),
+    ) * (selectionConfidence?.[index] ?? 1) * fade;
   }
   return withoutDc;
 }

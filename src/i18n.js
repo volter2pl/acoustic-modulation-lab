@@ -149,6 +149,7 @@ export const TRANSLATIONS = Object.freeze({
     "validation.fmBandwidthNyquist": "The estimated FM bandwidth is too close to the Nyquist limit.",
     "validation.fmBandwidthLower": "The estimated FM bandwidth extends below the valid frequency range.",
     "validation.fmReceiverRange": "The receiver bandwidth extends outside the valid frequency range.",
+    "validation.rdsTextCharacters": "Scaled RDS text supports printable ASCII characters only.",
     "validation.amLowerSideband": "The lower AM sideband extends below the valid frequency range.",
     "validation.amUpperSideband": "The upper AM sideband is too close to the Nyquist limit.",
     "validation.amReceiverRange": "The AM receiver bandwidth extends outside the valid frequency range."
@@ -291,6 +292,7 @@ export const TRANSLATIONS = Object.freeze({
     "validation.fmBandwidthNyquist": "Szacowane pasmo FM znajduje się zbyt blisko granicy Nyquista.",
     "validation.fmBandwidthLower": "Szacowane pasmo FM wychodzi poniżej prawidłowego zakresu częstotliwości.",
     "validation.fmReceiverRange": "Pasmo odbiornika wychodzi poza prawidłowy zakres częstotliwości.",
+    "validation.rdsTextCharacters": "Tekst skalowanego RDS obsługuje tylko drukowalne znaki ASCII.",
     "validation.amLowerSideband": "Dolna wstęga boczna AM wychodzi poniżej prawidłowego zakresu częstotliwości.",
     "validation.amUpperSideband": "Górna wstęga boczna AM znajduje się zbyt blisko granicy Nyquista.",
     "validation.amReceiverRange": "Pasmo odbiornika AM wychodzi poza prawidłowy zakres częstotliwości."
@@ -433,6 +435,7 @@ export const TRANSLATIONS = Object.freeze({
     "validation.fmBandwidthNyquist": "Die geschätzte FM-Bandbreite liegt zu nahe an der Nyquist-Grenze.",
     "validation.fmBandwidthLower": "Die geschätzte FM-Bandbreite unterschreitet den gültigen Frequenzbereich.",
     "validation.fmReceiverRange": "Die Empfängerbandbreite liegt außerhalb des gültigen Frequenzbereichs.",
+    "validation.rdsTextCharacters": "Der skalierte RDS-Text unterstützt nur druckbare ASCII-Zeichen.",
     "validation.amLowerSideband": "Das untere AM-Seitenband unterschreitet den gültigen Frequenzbereich.",
     "validation.amUpperSideband": "Das obere AM-Seitenband liegt zu nahe an der Nyquist-Grenze.",
     "validation.amReceiverRange": "Die AM-Empfängerbandbreite liegt außerhalb des gültigen Frequenzbereichs."
@@ -575,6 +578,7 @@ export const TRANSLATIONS = Object.freeze({
     "validation.fmBandwidthNyquist": "El ancho de banda FM estimado está demasiado cerca del límite de Nyquist.",
     "validation.fmBandwidthLower": "El ancho de banda FM estimado cae por debajo del rango de frecuencias válido.",
     "validation.fmReceiverRange": "El ancho de banda del receptor queda fuera del rango de frecuencias válido.",
+    "validation.rdsTextCharacters": "El texto RDS escalado solo admite caracteres ASCII imprimibles.",
     "validation.amLowerSideband": "La banda lateral inferior de AM cae por debajo del rango de frecuencias válido.",
     "validation.amUpperSideband": "La banda lateral superior de AM está demasiado cerca del límite de Nyquist.",
     "validation.amReceiverRange": "El ancho de banda del receptor AM queda fuera del rango de frecuencias válido."
@@ -717,6 +721,7 @@ export const TRANSLATIONS = Object.freeze({
     "validation.fmBandwidthNyquist": "A largura de banda FM estimada está muito próxima do limite de Nyquist.",
     "validation.fmBandwidthLower": "A largura de banda FM estimada se estende abaixo da faixa de frequências válida.",
     "validation.fmReceiverRange": "A largura de banda do receptor fica fora da faixa de frequências válida.",
+    "validation.rdsTextCharacters": "O texto RDS em escala aceita apenas caracteres ASCII imprimíveis.",
     "validation.amLowerSideband": "A banda lateral inferior de AM se estende abaixo da faixa de frequências válida.",
     "validation.amUpperSideband": "A banda lateral superior de AM está muito próxima do limite de Nyquist.",
     "validation.amReceiverRange": "A largura de banda do receptor AM fica fora da faixa de frequências válida."
@@ -859,6 +864,7 @@ export const TRANSLATIONS = Object.freeze({
     "validation.fmBandwidthNyquist": "估算的 FM 带宽过于接近奈奎斯特极限。",
     "validation.fmBandwidthLower": "估算的 FM 带宽延伸到有效频率范围以下。",
     "validation.fmReceiverRange": "接收器带宽超出有效频率范围。",
+    "validation.rdsTextCharacters": "缩放后的 RDS 文本仅支持可打印 ASCII 字符。",
     "validation.amLowerSideband": "AM 下边带延伸到有效频率范围以下。",
     "validation.amUpperSideband": "AM 上边带过于接近奈奎斯特极限。",
     "validation.amReceiverRange": "AM 接收器带宽超出有效频率范围。"
@@ -1001,6 +1007,7 @@ export const TRANSLATIONS = Object.freeze({
     "validation.fmBandwidthNyquist": "推定 FM 帯域幅がナイキスト限界に近すぎます。",
     "validation.fmBandwidthLower": "推定 FM 帯域幅が有効な周波数範囲の下限を下回っています。",
     "validation.fmReceiverRange": "受信機の帯域幅が有効な周波数範囲を外れています。",
+    "validation.rdsTextCharacters": "縮小 RDS テキストでは印字可能な ASCII 文字だけを使用できます。",
     "validation.amLowerSideband": "AM 下側波帯が有効な周波数範囲の下限を下回っています。",
     "validation.amUpperSideband": "AM 上側波帯がナイキスト限界に近すぎます。",
     "validation.amReceiverRange": "AM 受信機の帯域幅が有効な周波数範囲を外れています。"
@@ -1143,6 +1150,7 @@ export const TRANSLATIONS = Object.freeze({
     "validation.fmBandwidthNyquist": "La bande passante FM estimée est trop proche de la limite de Nyquist.",
     "validation.fmBandwidthLower": "La bande passante FM estimée descend sous la plage de fréquences valide.",
     "validation.fmReceiverRange": "La bande passante du récepteur sort de la plage de fréquences valide.",
+    "validation.rdsTextCharacters": "Le texte RDS mis à l’échelle accepte uniquement les caractères ASCII imprimables.",
     "validation.amLowerSideband": "La bande latérale AM inférieure descend sous la plage de fréquences valide.",
     "validation.amUpperSideband": "La bande latérale AM supérieure est trop proche de la limite de Nyquist.",
     "validation.amReceiverRange": "La bande passante du récepteur AM sort de la plage de fréquences valide."

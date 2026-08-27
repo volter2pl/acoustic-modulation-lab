@@ -23,6 +23,7 @@ export class StreamingAmReceiver {
     this.oscillatorPhase = 0;
     this.previousEnvelope = 0;
     this.previousDcOutput = 0;
+    this.samplesProcessed = 0;
     this.dcCoefficient = Math.exp((-2 * Math.PI * 20) / sampleRate);
     this.setCarrier(carrier);
 
@@ -71,6 +72,14 @@ export class StreamingAmReceiver {
 
     let output = withoutCarrier;
     for (const filter of this.audioFilters) output = filter.process(output);
-    return Math.max(-1, Math.min(1, output * this.outputGain));
+    this.samplesProcessed += 1;
+    const startupGain = Math.min(
+      1,
+      this.samplesProcessed / (this.sampleRate * 0.03),
+    );
+    return Math.max(
+      -1,
+      Math.min(1, output * this.outputGain * startupGain),
+    );
   }
 }

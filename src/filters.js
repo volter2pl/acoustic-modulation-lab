@@ -89,21 +89,34 @@ export function lowpass(signal, sampleRate, cutoff, stages = 2) {
   return output;
 }
 
+export function createButterworthLowpassSections(
+  sampleRate,
+  cutoff,
+  order = 8,
+) {
+  if (!Number.isInteger(order) || order < 2 || order % 2) {
+    throw new RangeError("Butterworth filter order must be a positive even integer.");
+  }
+
+  return Array.from({ length: order / 2 }, (_, section) => {
+    const angle = (Math.PI * (2 * section + 1)) / (2 * order);
+    const q = 1 / (2 * Math.sin(angle));
+    return new BiquadLowpass(sampleRate, cutoff, q);
+  });
+}
+
 /**
  * Even-order Butterworth low-pass made from correctly tuned biquad sections.
  * Unlike repeating identical sections, this keeps the total response at
  * approximately -3 dB at the cutoff while providing a steep stop band.
  */
 export function butterworthLowpass(signal, sampleRate, cutoff, order = 8) {
-  if (!Number.isInteger(order) || order < 2 || order % 2) {
-    throw new RangeError("Butterworth filter order must be a positive even integer.");
-  }
-
   let output = Float32Array.from(signal);
-  for (let section = 0; section < order / 2; section += 1) {
-    const angle = (Math.PI * (2 * section + 1)) / (2 * order);
-    const q = 1 / (2 * Math.sin(angle));
-    const filter = new BiquadLowpass(sampleRate, cutoff, q);
+  for (const filter of createButterworthLowpassSections(
+    sampleRate,
+    cutoff,
+    order,
+  )) {
     const filtered = new Float32Array(output.length);
     for (let index = 0; index < output.length; index += 1) {
       filtered[index] = filter.process(output[index]);

@@ -16,13 +16,19 @@ class AcousticFmReceiverProcessor extends AudioWorkletProcessor {
 
   constructor(options) {
     super();
-    const { deviation, messageBandwidth, carrier = 12000 } =
+    const {
+      deviation,
+      messageBandwidth,
+      selectionReferenceLevel,
+      carrier = 12000,
+    } =
       options.processorOptions ?? {};
     this.receiver = new StreamingFmReceiver(
       sampleRate,
       carrier,
       deviation,
       messageBandwidth,
+      { selectionReferenceLevel },
     );
   }
 

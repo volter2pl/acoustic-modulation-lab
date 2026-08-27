@@ -5,6 +5,8 @@ export const RADIO_STATION_CARRIERS = Object.freeze([5000, 12000, 19000]);
 export const RADIO_BAND_DEVIATION = 750;
 export const RADIO_BAND_MESSAGE_BANDWIDTH = 2000;
 export const RADIO_BAND_OUTPUT_LEVEL = 0.78;
+export const RADIO_BAND_STATION_LEVEL =
+  RADIO_BAND_OUTPUT_LEVEL / RADIO_STATION_CARRIERS.length;
 
 /**
  * Combine independent FM stations into one real-valued acoustic radio band.
@@ -57,6 +59,7 @@ export function receiveRadioStation(
   sampleRate,
   tunedCarrier,
   deviation = RADIO_BAND_DEVIATION,
+  selectionReferenceLevel = RADIO_BAND_STATION_LEVEL,
 ) {
   return demodulateFM(
     channel,
@@ -64,5 +67,6 @@ export function receiveRadioStation(
     tunedCarrier,
     deviation,
     RADIO_BAND_MESSAGE_BANDWIDTH,
+    { selectionReferenceLevel },
   );
 }
