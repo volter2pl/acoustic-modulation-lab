@@ -1,14 +1,27 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { demodulateFM, demodulateFMComposite } from "../src/fm-demodulator.js";
+import { demodulateAM } from "../src/modulation/am/demodulator.js";
+import { modulateAM } from "../src/modulation/am/modulator.js";
+import {
+  AM_STATION_CARRIERS,
+  createAmRadioBand,
+  getAmBandReceiverGain,
+  receiveAmStation,
+} from "../src/modulation/am/radio-band.js";
+import { StreamingAmReceiver } from "../src/modulation/am/streaming-receiver.js";
+import { MODULATION_EXPERIMENTS } from "../src/modulation/index.js";
+import {
+  demodulateFM,
+  demodulateFMComposite,
+} from "../src/modulation/fm/demodulator.js";
 import { AUDIO_EXAMPLES } from "../src/examples.js";
-import { modulateFM } from "../src/fm-modulator.js";
+import { modulateFM } from "../src/modulation/fm/modulator.js";
 import {
   createRadioBand,
   RADIO_STATION_CARRIERS,
   receiveRadioStation,
-} from "../src/radio-channel.js";
+} from "../src/modulation/fm/radio-band.js";
 import {
   createRdsComposite,
   decodeRdsComposite,
@@ -16,10 +29,10 @@ import {
   RDS_MODES,
   RDS_PILOT,
   recoverAudioFromRdsComposite,
-} from "../src/rds.js";
+} from "../src/modulation/fm/rds.js";
 import { encodeWav } from "../src/wav.js";
 import { SpectrumPlayer } from "../src/spectrum.js";
-import { StreamingFmReceiver } from "../src/streaming-fm-receiver.js";
+import { StreamingFmReceiver } from "../src/modulation/fm/streaming-receiver.js";
 
 function correlation(first, second, offset = 0, lag = 0) {
   const length = Math.min(first.length, second.length) - offset - Math.abs(lag);
@@ -94,6 +107,52 @@ test("the modulator keeps its output amplitude bounded", () => {
   assert.ok(encoded.every((sample) => Math.abs(sample) <= 0.720001));
 });
 
+test("conventional AM and its envelope receiver recover a sinusoidal message", () => {
+  const sampleRate = 48000;
+  const message = Float32Array.from(
+    { length: sampleRate * 2 },
+    (_, index) => 0.72 * Math.sin((2 * Math.PI * 440 * index) / sampleRate),
+  );
+  const encoded = modulateAM(message, sampleRate, 12000, 0.8);
+  const decoded = demodulateAM(encoded, sampleRate, 12000);
+  let score = -1;
+  for (let lag = -160; lag <= 160; lag += 1) {
+    score = Math.max(score, correlation(message, decoded, sampleRate * 0.08, lag));
+  }
+  assert.ok(score > 0.99, `expected AM correlation > 0.99, received ${score}`);
+});
+
+test("AM remains bounded through the complete 0–150% depth range", () => {
+  const input = Float32Array.from([0, 0.5, 1, -0.5, -1]);
+  const encoded = modulateAM(input, 48000, 12000, 1.5);
+  assert.ok(encoded.every((sample) => Math.abs(sample) <= 0.950001));
+});
+
+test("AM overmodulation visibly distorts an envelope-detector result", () => {
+  const sampleRate = 48000;
+  const message = Float32Array.from(
+    { length: sampleRate * 2 },
+    (_, index) => Math.sin((2 * Math.PI * 440 * index) / sampleRate),
+  );
+  const normal = demodulateAM(modulateAM(message, sampleRate, 12000, 1), sampleRate, 12000);
+  const overmodulated = demodulateAM(
+    modulateAM(message, sampleRate, 12000, 1.5),
+    sampleRate,
+    12000,
+  );
+  let normalScore = -1;
+  let overmodulatedScore = -1;
+  for (let lag = -160; lag <= 160; lag += 1) {
+    normalScore = Math.max(normalScore, correlation(message, normal, sampleRate * 0.08, lag));
+    overmodulatedScore = Math.max(
+      overmodulatedScore,
+      correlation(message, overmodulated, sampleRate * 0.08, lag),
+    );
+  }
+  assert.ok(normalScore > 0.99);
+  assert.ok(overmodulatedScore < 0.98);
+});
+
 test("one radio band carries three independently tunable FM stations", () => {
   const sampleRate = 48000;
   const frequencies = [300, 700, 1300];
@@ -162,6 +221,127 @@ test("a radio band follows the longest programme and remains below clipping", ()
 
   assert.equal(band.length, 36000);
   assert.ok(band.every((sample) => Math.abs(sample) <= 0.780001));
+});
+
+test("one AM radio band carries three independently tunable stations", () => {
+  const sampleRate = 48000;
+  const frequencies = [300, 700, 1300];
+  const messages = frequencies.map((frequency) =>
+    Float32Array.from(
+      { length: sampleRate * 2 },
+      (_, index) => 0.7 * Math.sin((2 * Math.PI * frequency * index) / sampleRate),
+    ),
+  );
+  const band = createAmRadioBand(messages, sampleRate);
+
+  frequencies.forEach((frequency, stationIndex) => {
+    const received = receiveAmStation(
+      band,
+      sampleRate,
+      AM_STATION_CARRIERS[stationIndex],
+    );
+    const wanted = toneAmplitude(received, sampleRate, frequency, 0.2, 1.8);
+    const unwanted = frequencies
+      .filter((_, index) => index !== stationIndex)
+      .map((otherFrequency) =>
+        toneAmplitude(received, sampleRate, otherFrequency, 0.2, 1.8),
+      );
+    assert.ok(wanted > 0.25);
+    assert.ok(unwanted.every((level) => level < 0.001));
+  });
+  assert.ok(band.every((sample) => Math.abs(sample) <= 0.780001));
+});
+
+test("a streaming AM receiver retunes without restarting the shared band", () => {
+  const sampleRate = 48000;
+  const frequencies = [300, 700, 1300];
+  const messages = frequencies.map((frequency) =>
+    Float32Array.from(
+      { length: sampleRate * 2 },
+      (_, index) => 0.7 * Math.sin((2 * Math.PI * frequency * index) / sampleRate),
+    ),
+  );
+  const band = createAmRadioBand(messages, sampleRate);
+  const receiver = new StreamingAmReceiver(
+    sampleRate,
+    AM_STATION_CARRIERS[0],
+    2000,
+    { outputGain: getAmBandReceiverGain() },
+  );
+  const output = new Float32Array(band.length);
+  for (let index = 0; index < band.length; index += 1) {
+    if (index === sampleRate) receiver.setCarrier(AM_STATION_CARRIERS[1]);
+    output[index] = receiver.process(band[index]);
+  }
+  assert.ok(toneAmplitude(output, sampleRate, frequencies[0], 0.2, 0.8) > 0.6);
+  assert.ok(toneAmplitude(output, sampleRate, frequencies[1], 0.2, 0.8) < 0.001);
+  assert.ok(toneAmplitude(output, sampleRate, frequencies[1], 1.2, 1.8) > 0.6);
+  assert.ok(toneAmplitude(output, sampleRate, frequencies[0], 1.2, 1.8) < 0.001);
+});
+
+test("AM and FM expose the same application experiment contract", () => {
+  const methods = [
+    "getCarrierLimits",
+    "validateSingle",
+    "validateBand",
+    "getOccupiedBandwidth",
+    "getSingleSnapshot",
+    "encodeSingle",
+    "decodeSingle",
+    "prepareBandMessage",
+    "createBand",
+    "receiveBand",
+    "createLiveReceiver",
+  ];
+  for (const experiment of Object.values(MODULATION_EXPERIMENTS)) {
+    assert.ok(experiment.id === "am" || experiment.id === "fm");
+    assert.ok(experiment.stationCarriers.length === 3);
+    for (const method of methods) assert.equal(typeof experiment[method], "function");
+  }
+  assert.equal(MODULATION_EXPERIMENTS.fm.supportsRds, true);
+  assert.equal(MODULATION_EXPERIMENTS.am.supportsRds, false);
+});
+
+test("both live receiver worklets register and process finite audio blocks", async () => {
+  const previousProcessor = globalThis.AudioWorkletProcessor;
+  const previousSampleRate = globalThis.sampleRate;
+  const previousRegister = globalThis.registerProcessor;
+  const processors = new Map();
+  globalThis.AudioWorkletProcessor = class {};
+  globalThis.sampleRate = 48000;
+  globalThis.registerProcessor = (name, Processor) => processors.set(name, Processor);
+
+  try {
+    await import("../src/modulation/fm/receiver-worklet.js?test");
+    await import("../src/modulation/am/receiver-worklet.js?test");
+    const cases = [
+      [
+        "acoustic-fm-live-receiver",
+        { carrier: 12000, deviation: 750, messageBandwidth: 2000 },
+      ],
+      [
+        "acoustic-am-live-receiver",
+        { carrier: 12000, messageBandwidth: 2000, receiverGain: 7.96 },
+      ],
+    ];
+    for (const [name, processorOptions] of cases) {
+      const Processor = processors.get(name);
+      assert.equal(typeof Processor, "function");
+      const processor = new Processor({ processorOptions });
+      const output = new Float32Array(128);
+      const keepAlive = processor.process(
+        [[new Float32Array(128)]],
+        [[output]],
+        { tunedCarrier: new Float32Array([12000]) },
+      );
+      assert.equal(keepAlive, true);
+      assert.ok(output.every(Number.isFinite));
+    }
+  } finally {
+    globalThis.AudioWorkletProcessor = previousProcessor;
+    globalThis.sampleRate = previousSampleRate;
+    globalThis.registerProcessor = previousRegister;
+  }
 });
 
 test("scaled RDS recovers an eight-character Programme Service name", () => {
@@ -423,10 +603,12 @@ test("the interface uses spectrograms instead of amplitude waveforms", async () 
 
   assert.match(html, /plugins\/spectrogram\.min\.js/);
   assert.match(html, /id="source-spectrum"/);
-  assert.match(html, /id="fm-spectrum"/);
+  assert.match(html, /id="signal-spectrum"/);
   assert.match(html, /id="result-spectrum"/);
   assert.match(html, /id="result-spectrum-state"/);
-  assert.match(html, /href="https:\/\/github\.com\/volter2pl\/acoustic-fm"/);
+  assert.match(html, /id="modulation-fm"/);
+  assert.match(html, /id="modulation-am"/);
+  assert.match(html, /href="https:\/\/github\.com\/volter2pl\/acoustic-modulation-lab"/);
   assert.doesNotMatch(html, /Runs locally/);
   assert.doesNotMatch(html, /Play high-frequency signals at a low volume/);
   assert.doesNotMatch(html, /id="[^"]*waveform/);
@@ -436,11 +618,15 @@ test("DSP modules stay independent from browser UI APIs", async () => {
   const { readFile } = await import("node:fs/promises");
   const dspFiles = [
     "filters.js",
-    "fm-modulator.js",
-    "fm-demodulator.js",
-    "radio-channel.js",
-    "streaming-fm-receiver.js",
-    "rds.js",
+    "modulation/fm/modulator.js",
+    "modulation/fm/demodulator.js",
+    "modulation/fm/radio-band.js",
+    "modulation/fm/streaming-receiver.js",
+    "modulation/fm/rds.js",
+    "modulation/am/modulator.js",
+    "modulation/am/demodulator.js",
+    "modulation/am/radio-band.js",
+    "modulation/am/streaming-receiver.js",
     "wav.js",
   ];
 
@@ -460,15 +646,23 @@ test("source code and interface copy are English", async () => {
     "audio.js",
     "examples.js",
     "filters.js",
-    "fm-demodulator.js",
-    "fm-modulator.js",
+    "live-receiver.js",
     "main.js",
     "recorder.js",
-    "radio-channel.js",
-    "live-radio-receiver.js",
-    "live-receiver-worklet.js",
-    "rds.js",
-    "streaming-fm-receiver.js",
+    "modulation/index.js",
+    "modulation/fm/demodulator.js",
+    "modulation/fm/experiment.js",
+    "modulation/fm/modulator.js",
+    "modulation/fm/radio-band.js",
+    "modulation/fm/receiver-worklet.js",
+    "modulation/fm/rds.js",
+    "modulation/fm/streaming-receiver.js",
+    "modulation/am/demodulator.js",
+    "modulation/am/experiment.js",
+    "modulation/am/modulator.js",
+    "modulation/am/radio-band.js",
+    "modulation/am/receiver-worklet.js",
+    "modulation/am/streaming-receiver.js",
     "ui.js",
     "wav.js",
     "spectrum.js",
@@ -478,4 +672,19 @@ test("source code and interface copy are English", async () => {
   );
   const polishDiacritics = /[\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c\u0104\u0106\u0118\u0141\u0143\u00d3\u015a\u0179\u017b]/;
   assert.doesNotMatch(`${interfaceHtml}\n${contents.join("\n")}`, polishDiacritics);
+});
+
+test("educational documentation covers AM and FM as separate concepts", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const [overview, amGuide, fmGuide] = await Promise.all([
+    readFile(new URL("../README.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/am.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/fm.md", import.meta.url), "utf8"),
+  ]);
+  assert.match(overview, /Acoustic Modulation Lab/);
+  assert.match(overview, /volter2pl\.github\.io\/acoustic-modulation-lab/);
+  assert.match(amGuide, /s\(t\) = A · \[1 \+ μm\(t\)\]/);
+  assert.match(amGuide, /Overmodulation/);
+  assert.match(fmGuide, /fi\(t\) = fc \+ Δf · m\(t\)/);
+  assert.match(fmGuide, /Scaled RDS/);
 });

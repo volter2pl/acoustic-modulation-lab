@@ -1,4 +1,4 @@
-import { BiquadLowpass } from "./filters.js";
+import { BiquadLowpass } from "../../filters.js";
 
 /**
  * A sample-by-sample FM receiver suitable for an AudioWorklet.

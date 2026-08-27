@@ -3,10 +3,12 @@ import { SpectrumPlayer } from "./spectrum.js";
 
 const ELEMENT_IDS = [
   "app-status",
+  "modulation-fm",
+  "modulation-am",
   "mode-single",
   "mode-band",
   "source-title",
-  "fm-title",
+  "signal-title",
   "result-title",
   "single-source",
   "band-source",
@@ -31,7 +33,13 @@ const ELEMENT_IDS = [
   "deviation",
   "deviation-value",
   "frequency-range",
+  "fm-parameters",
+  "am-parameters",
+  "modulation-depth",
+  "modulation-depth-value",
+  "modulation-depth-state",
   "occupied-bandwidth",
+  "rds-controls",
   "rds-mode",
   "rds-input-wrap",
   "rds-input-label",
@@ -40,17 +48,21 @@ const ELEMENT_IDS = [
   "parameter-warning",
   "single-controls",
   "band-controls",
+  "band-parameter-label",
+  "band-parameter-value",
+  "band-feature-label",
+  "band-feature-value",
   "encode-button",
-  "fm-file-button",
-  "fm-file",
-  "fm-loaded",
-  "fm-name",
-  "fm-meta",
-  "fm-origin",
-  "fm-stale",
-  "fm-play",
-  "fm-time",
-  "fm-download",
+  "signal-file-button",
+  "signal-file",
+  "signal-loaded",
+  "signal-name",
+  "signal-meta",
+  "signal-origin",
+  "signal-stale",
+  "signal-play",
+  "signal-time",
+  "signal-download",
   "decode-button",
   "result-empty",
   "result-empty-title",
@@ -100,12 +112,12 @@ export class AppUI {
         frequencyMax: 8000,
         height: 190,
       }),
-      fm: new SpectrumPlayer({
-        container: document.getElementById("fm-spectrum"),
-        engineContainer: document.getElementById("fm-spectrum-engine"),
-        playhead: document.getElementById("fm-spectrum-playhead"),
-        playButton: this.elements["fm-play"],
-        timeElement: this.elements["fm-time"],
+      signal: new SpectrumPlayer({
+        container: document.getElementById("signal-spectrum"),
+        engineContainer: document.getElementById("signal-spectrum-engine"),
+        playhead: document.getElementById("signal-spectrum-playhead"),
+        playButton: this.elements["signal-play"],
+        timeElement: this.elements["signal-time"],
         accentColor: [240, 164, 93],
         frequencyMax: 24000,
         height: 125,
@@ -128,6 +140,7 @@ export class AppUI {
     return {
       carrier: Number(this.elements.carrier.value),
       deviation: Number(this.elements.deviation.value),
+      modulationDepth: Number(this.elements["modulation-depth"].value),
     };
   }
 
@@ -162,7 +175,24 @@ export class AppUI {
     }
   }
 
-  setExperimentMode(mode) {
+  setModulation(modulation) {
+    const fm = modulation === "fm";
+    this.elements["modulation-fm"].classList.toggle("is-active", fm);
+    this.elements["modulation-fm"].setAttribute("aria-pressed", String(fm));
+    this.elements["modulation-am"].classList.toggle("is-active", !fm);
+    this.elements["modulation-am"].setAttribute("aria-pressed", String(!fm));
+    this.elements["fm-parameters"].hidden = !fm;
+    this.elements["am-parameters"].hidden = fm;
+    this.elements["rds-controls"].hidden = !fm;
+    this.elements["band-parameter-label"].textContent = fm
+      ? "Deviation"
+      : "Modulation depth";
+    this.elements["band-parameter-value"].textContent = fm ? "±0.75 kHz" : "80%";
+    this.elements["band-feature-label"].textContent = fm ? "RDS" : "Detection";
+    this.elements["band-feature-value"].textContent = fm ? "Off" : "Envelope";
+  }
+
+  setExperimentMode(mode, modulation) {
     const single = mode === "single";
     this.elements["mode-single"].classList.toggle("is-active", single);
     this.elements["mode-single"].setAttribute("aria-pressed", String(single));
@@ -175,18 +205,21 @@ export class AppUI {
     this.elements["decode-button"].hidden = !single;
     this.elements["receiver-controls"].hidden = single;
     this.elements["source-title"].textContent = single ? "Message" : "Stations";
-    this.elements["fm-title"].textContent = single ? "FM signal" : "Radio band";
+    const label = modulation.toUpperCase();
+    this.elements["signal-title"].textContent = single
+      ? `${label} signal`
+      : `${label} radio band`;
     this.elements["result-title"].textContent = single
       ? "Recovered audio"
       : "Tuned station";
-    this.elements["fm-file-button"].textContent = single
-      ? "Load your own FM signal"
-      : "Load your own radio band";
+    this.elements["signal-file-button"].textContent = single
+      ? `Load your own ${label} signal`
+      : `Load your own ${label} radio band`;
     this.elements["result-empty-title"].textContent = single
       ? "Your result will appear here"
       : "Tune the receiver";
     this.elements["result-empty-copy"].textContent = single
-      ? "Prepare an FM signal first"
+      ? `Prepare an ${label} signal first`
       : "Prepare a radio band first";
     this.players.result.setExternalPlayback(
       single
@@ -241,17 +274,19 @@ export class AppUI {
   }
 
   renderControls({
+    modulation,
     mode,
+    parameters,
     warning,
     sourceReady,
-    fmReady,
+    signalReady,
     stale,
     busy,
     operation,
     occupiedBandwidth,
   }) {
     const single = mode === "single";
-    const { carrier, deviation } = this.getParameters();
+    const { carrier, deviation, modulationDepth } = parameters;
     const formatKhz = (value) => `${(value / 1000).toFixed(1)} kHz`;
 
     this.elements["carrier-value"].textContent = formatKhz(carrier);
@@ -259,6 +294,15 @@ export class AppUI {
     this.elements["frequency-range"].textContent = `${((carrier - deviation) / 1000).toFixed(
       1,
     )}–${((carrier + deviation) / 1000).toFixed(1)} kHz`;
+    this.elements["modulation-depth-value"].textContent = `${modulationDepth}%`;
+    const depthState = this.elements["modulation-depth-state"];
+    depthState.textContent =
+      modulationDepth === 0
+        ? "Carrier only"
+        : modulationDepth <= 100
+          ? "Valid"
+          : "Overmodulated";
+    depthState.classList.toggle("is-warning", modulationDepth > 100);
     this.elements["occupied-bandwidth"].textContent = `≈${(
       occupiedBandwidth / 1000
     ).toFixed(1)} kHz`;
@@ -267,10 +311,10 @@ export class AppUI {
     this.elements["parameter-warning"].textContent = warning || "";
     this.elements["encode-button"].disabled = !sourceReady || Boolean(warning) || busy;
     this.elements["decode-button"].disabled =
-      !single || !fmReady || Boolean(warning) || stale || busy;
+      !single || !signalReady || Boolean(warning) || stale || busy;
     this.elements["tune-button"].disabled =
-      single || !fmReady || Boolean(warning) || stale || busy;
-    this.elements["fm-stale"].hidden = !stale;
+      single || !signalReady || Boolean(warning) || stale || busy;
+    this.elements["signal-stale"].hidden = !stale;
     this.elements["encode-button"].textContent =
       busy && operation === "encode"
         ? single
@@ -285,6 +329,9 @@ export class AppUI {
       busy && operation === "decode" ? "Updating…" : "Update spectrum & WAV";
     this.elements["rds-mode"].disabled = busy;
     this.elements["rds-text"].disabled = busy;
+    this.elements.carrier.disabled = busy;
+    this.elements.deviation.disabled = busy;
+    this.elements["modulation-depth"].disabled = busy;
 
     for (const button of this.elements["example-list"].querySelectorAll("button")) {
       button.disabled = busy;
@@ -296,6 +343,8 @@ export class AppUI {
     }
     this.elements["mode-single"].disabled = busy;
     this.elements["mode-band"].disabled = busy;
+    this.elements["modulation-fm"].disabled = busy;
+    this.elements["modulation-am"].disabled = busy;
     this.elements["receiver-carrier"].disabled = busy;
     for (const button of this.elements["receiver-controls"].querySelectorAll("button")) {
       if (button !== this.elements["tune-button"]) button.disabled = busy;
@@ -332,27 +381,27 @@ export class AppUI {
     this.elements["source-loaded"].hidden = false;
   }
 
-  async showFm({ blob, name, meta, origin }) {
-    this.elements["fm-loaded"].hidden = false;
-    this.elements["fm-name"].textContent = name;
-    this.elements["fm-meta"].textContent = meta;
-    this.elements["fm-origin"].textContent = origin;
-    this.elements["fm-origin"].hidden = false;
-    this.elements["fm-stale"].hidden = true;
-    await this.players.fm.load(blob);
+  async showSignal({ blob, name, meta, origin }) {
+    this.elements["signal-loaded"].hidden = false;
+    this.elements["signal-name"].textContent = name;
+    this.elements["signal-meta"].textContent = meta;
+    this.elements["signal-origin"].textContent = origin;
+    this.elements["signal-origin"].hidden = false;
+    this.elements["signal-stale"].hidden = true;
+    await this.players.signal.load(blob);
   }
 
-  clearFm() {
-    this.players.fm.stop();
-    this.elements["fm-loaded"].hidden = true;
-    this.elements["fm-origin"].hidden = true;
+  clearSignal() {
+    this.players.signal.stop();
+    this.elements["signal-loaded"].hidden = true;
+    this.elements["signal-origin"].hidden = true;
   }
 
   async showResult({
     blob,
     meta,
-    rds,
-    rdsExpected,
+    data,
+    dataExpected,
     name = "Recovered message",
     snapshotCarrier = null,
   }) {
@@ -360,15 +409,15 @@ export class AppUI {
     this.elements["result-loaded"].hidden = false;
     this.elements["result-meta"].textContent = meta;
     this.elements["result-name"].textContent = name;
-    this.elements["result-rds"].hidden = !rdsExpected;
-    if (rdsExpected) {
-      this.elements["result-rds"].classList.toggle("is-missing", !rds);
+    this.elements["result-rds"].hidden = !dataExpected;
+    if (dataExpected) {
+      this.elements["result-rds"].classList.toggle("is-missing", !data);
       this.elements["result-rds-mode"].textContent =
-        rds?.mode === "ps" ? "PS" : "RadioText";
+        data?.mode === "ps" ? "PS" : "RadioText";
       this.elements["result-rds-text"].textContent =
-        rds?.text || "No valid RDS groups recovered";
-      this.elements["result-rds-meta"].textContent = rds
-        ? `Recovered after ${rds.completedAt.toFixed(1)} s · ${rds.validGroups} valid groups`
+        data?.text || "No valid RDS groups recovered";
+      this.elements["result-rds-meta"].textContent = data
+        ? `Recovered after ${data.completedAt.toFixed(1)} s · ${data.validGroups} valid groups`
         : "Check the selected mode, carrier, and deviation";
     }
     await this.players.result.load(blob);
@@ -548,9 +597,15 @@ export class AppUI {
 
   bindEvents() {
     const sourceFile = this.elements["source-file"];
-    const fmFile = this.elements["fm-file"];
+    const signalFile = this.elements["signal-file"];
     const dropzone = this.elements["source-dropzone"];
 
+    this.elements["modulation-fm"].addEventListener("click", () =>
+      this.handlers.onModulationChanged("fm"),
+    );
+    this.elements["modulation-am"].addEventListener("click", () =>
+      this.handlers.onModulationChanged("am"),
+    );
     this.elements["mode-single"].addEventListener("click", () =>
       this.handlers.onModeChanged("single"),
     );
@@ -609,6 +664,9 @@ export class AppUI {
 
     this.elements.carrier.addEventListener("input", () => this.handlers.onParametersChanged());
     this.elements.deviation.addEventListener("input", () => this.handlers.onParametersChanged());
+    this.elements["modulation-depth"].addEventListener("input", () =>
+      this.handlers.onParametersChanged(),
+    );
     this.elements["receiver-carrier"].addEventListener("input", () => {
       this.renderReceiverTuning();
       this.handlers.onReceiverTuningChanged();
@@ -631,12 +689,16 @@ export class AppUI {
     this.elements["encode-button"].addEventListener("click", () => this.handlers.onEncode());
     this.elements["decode-button"].addEventListener("click", () => this.handlers.onDecode());
     this.elements["tune-button"].addEventListener("click", () => this.handlers.onDecode());
-    this.elements["fm-file-button"].addEventListener("click", () => this.chooseFile(fmFile));
-    fmFile.addEventListener("change", () => {
-      const [file] = fmFile.files;
-      if (file) this.handlers.onFmFile(file);
+    this.elements["signal-file-button"].addEventListener("click", () =>
+      this.chooseFile(signalFile),
+    );
+    signalFile.addEventListener("change", () => {
+      const [file] = signalFile.files;
+      if (file) this.handlers.onSignalFile(file);
     });
-    this.elements["fm-download"].addEventListener("click", () => this.handlers.onDownloadFm());
+    this.elements["signal-download"].addEventListener("click", () =>
+      this.handlers.onDownloadSignal(),
+    );
     this.elements["result-download"].addEventListener("click", () =>
       this.handlers.onDownloadResult(),
     );

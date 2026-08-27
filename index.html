@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Encode sound with acoustic FM modulation and recover it directly in your browser."
+      content="Compare acoustic AM and FM modulation through interactive spectrograms and live radio tuning."
     />
-    <title>Acoustic FM</title>
+    <title>Acoustic Modulation Lab</title>
     <link rel="stylesheet" href="./styles.css" />
     <script
       defer
@@ -21,30 +21,42 @@
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="./" aria-label="Acoustic FM — home">
-        <span class="brand-mark" aria-hidden="true">FM</span>
-        <span>Acoustic FM</span>
+      <a class="brand" href="./" aria-label="Acoustic Modulation Lab — home">
+        <span class="brand-mark" aria-hidden="true">AM/FM</span>
+        <span>Acoustic Modulation Lab</span>
       </a>
       <a
         class="github-link"
-        href="https://github.com/volter2pl/acoustic-fm"
+        href="https://github.com/volter2pl/acoustic-modulation-lab"
         target="_blank"
         rel="noreferrer"
-        aria-label="View Acoustic FM on GitHub"
+        aria-label="View Acoustic Modulation Lab on GitHub"
       >GitHub ↗</a>
     </header>
 
     <main>
       <div id="app-status" class="app-status" role="status" aria-live="polite" hidden></div>
 
-      <div class="experiment-switch" role="group" aria-label="Experiment mode">
-        <button id="mode-single" class="is-active" type="button" aria-pressed="true">
-          Single station
-        </button>
-        <button id="mode-band" type="button" aria-pressed="false">Radio band</button>
+      <div class="mode-switches">
+        <div class="switch-group">
+          <span class="switch-label">Modulation</span>
+          <div class="experiment-switch" role="group" aria-label="Modulation type">
+            <button id="modulation-fm" class="is-active" type="button" aria-pressed="true">FM</button>
+            <button id="modulation-am" type="button" aria-pressed="false">AM</button>
+          </div>
+        </div>
+        <div class="switch-group">
+          <span class="switch-label">Experiment</span>
+          <div class="experiment-switch" role="group" aria-label="Experiment mode">
+            <button id="mode-single" class="is-active" type="button" aria-pressed="true">
+              Single station
+            </button>
+            <button id="mode-band" type="button" aria-pressed="false">Radio band</button>
+          </div>
+        </div>
       </div>
 
-      <section class="signal-flow" aria-label="FM encoding and decoding">
+      <section class="signal-flow" aria-label="Acoustic modulation and demodulation">
         <article class="stage-card" id="source-card">
           <header class="stage-header">
             <span class="step-number">1</span>
@@ -116,14 +128,14 @@
           <span></span>
         </div>
 
-        <article class="stage-card fm-card" id="fm-card">
+        <article class="stage-card signal-card" id="signal-card">
           <header class="stage-header">
             <span class="step-number">2</span>
             <div>
               <p class="eyebrow">MODULATION</p>
-              <h2 id="fm-title">FM signal</h2>
+              <h2 id="signal-title">FM signal</h2>
             </div>
-            <span id="fm-origin" class="state-badge" hidden></span>
+            <span id="signal-origin" class="state-badge" hidden></span>
           </header>
 
           <div id="single-controls" class="parameter-block">
@@ -133,39 +145,56 @@
             </label>
             <input id="carrier" type="range" min="5000" max="20000" step="100" value="18000" />
 
-            <label class="parameter-label" for="deviation">
-              <span>Deviation</span>
-              <output id="deviation-value">±1.0 kHz</output>
-            </label>
-            <input id="deviation" type="range" min="250" max="2500" step="250" value="1000" />
+            <div id="fm-parameters">
+              <label class="parameter-label" for="deviation">
+                <span>Deviation</span>
+                <output id="deviation-value">±1.0 kHz</output>
+              </label>
+              <input id="deviation" type="range" min="250" max="2500" step="250" value="1000" />
 
-            <div class="frequency-range">
-              <span>Instantaneous range</span>
-              <strong id="frequency-range">17.0–19.0 kHz</strong>
+              <div class="frequency-range">
+                <span>Instantaneous range</span>
+                <strong id="frequency-range">17.0–19.0 kHz</strong>
+              </div>
             </div>
-            <div class="frequency-range">
+
+            <div id="am-parameters" hidden>
+              <label class="parameter-label" for="modulation-depth">
+                <span>Modulation depth</span>
+                <output id="modulation-depth-value">80%</output>
+              </label>
+              <input id="modulation-depth" type="range" min="0" max="150" step="10" value="80" />
+              <div class="frequency-range">
+                <span>Envelope</span>
+                <strong id="modulation-depth-state">Valid</strong>
+              </div>
+            </div>
+
+            <div class="frequency-range occupied-summary">
               <span>Occupied bandwidth</span>
               <strong id="occupied-bandwidth">≈6.8 kHz</strong>
             </div>
 
-            <div class="rds-control">
-              <label for="rds-mode">
-                <span>RDS</span>
-                <small>scaled 1:8</small>
-              </label>
-              <select id="rds-mode">
-                <option value="none">None</option>
-                <option value="ps">PS</option>
-                <option value="radiotext">RadioText</option>
-              </select>
-            </div>
+            <div id="rds-controls">
+              <div class="rds-control">
+                <label for="rds-mode">
+                  <span>RDS</span>
+                  <small>scaled 1:8</small>
+                </label>
+                <select id="rds-mode">
+                  <option value="none">None</option>
+                  <option value="ps">PS</option>
+                  <option value="radiotext">RadioText</option>
+                </select>
+              </div>
 
-            <div id="rds-input-wrap" class="rds-input" hidden>
-              <label for="rds-text">
-                <span id="rds-input-label">Programme Service</span>
-                <small id="rds-counter">0/8</small>
-              </label>
-              <input id="rds-text" type="text" maxlength="8" autocomplete="off" />
+              <div id="rds-input-wrap" class="rds-input" hidden>
+                <label for="rds-text">
+                  <span id="rds-input-label">Programme Service</span>
+                  <small id="rds-counter">0/8</small>
+                </label>
+                <input id="rds-text" type="text" maxlength="8" autocomplete="off" />
+              </div>
             </div>
             <p id="parameter-warning" class="inline-warning" hidden></p>
           </div>
@@ -176,16 +205,16 @@
               <strong>5.0 · 12.0 · 19.0 kHz</strong>
             </div>
             <div class="band-plan-row">
-              <span>Deviation</span>
-              <strong>±0.75 kHz</strong>
+              <span id="band-parameter-label">Deviation</span>
+              <strong id="band-parameter-value">±0.75 kHz</strong>
             </div>
             <div class="band-plan-row">
               <span>Programme band</span>
               <strong>2.0 kHz each</strong>
             </div>
             <div class="band-plan-row">
-              <span>RDS</span>
-              <strong>Off</strong>
+              <span id="band-feature-label">RDS</span>
+              <strong id="band-feature-value">Off</strong>
             </div>
           </div>
 
@@ -194,29 +223,28 @@
           </button>
 
           <div class="or-divider"><span>or</span></div>
-          <button id="fm-file-button" class="button button-quiet button-wide" type="button">
+          <button id="signal-file-button" class="button button-quiet button-wide" type="button">
             Load your own FM signal
           </button>
-          <input id="fm-file" type="file" accept="audio/*" hidden />
+          <input id="signal-file" type="file" accept="audio/*" hidden />
 
-          <div id="fm-loaded" class="loaded-content fm-loaded" hidden>
+          <div id="signal-loaded" class="loaded-content signal-loaded" hidden>
             <div class="file-row">
               <div class="file-copy">
-                <strong id="fm-name">FM signal</strong>
-                <span id="fm-meta">—</span>
+                <strong id="signal-name">FM signal</strong>
+                <span id="signal-meta">—</span>
               </div>
-              <span id="fm-stale" class="stale-label" hidden>Settings changed</span>
+              <span id="signal-stale" class="stale-label" hidden>Settings changed</span>
             </div>
-            <div class="spectrum-shell fm-spectrum">
-              <div id="fm-spectrum" class="spectrum"></div>
-              <div id="fm-spectrum-playhead" class="spectrum-playhead"></div>
-              <div id="fm-spectrum-engine" class="spectrum-engine"></div>
+            <div class="spectrum-shell signal-spectrum">
+              <div id="signal-spectrum" class="spectrum"></div>
+              <div id="signal-spectrum-playhead" class="spectrum-playhead"></div>
+              <div id="signal-spectrum-engine" class="spectrum-engine"></div>
             </div>
             <div class="player-row">
-              <button id="fm-play" class="play-button" type="button" aria-label="Play FM signal">▶</button>
-              <span id="fm-time" class="timecode">0:00 / 0:00</span>
-              <span class="safe-volume" title="Playback volume is limited">12%</span>
-              <button id="fm-download" class="download-button" type="button">Download WAV</button>
+              <button id="signal-play" class="play-button" type="button" aria-label="Play modulated signal">▶</button>
+              <span id="signal-time" class="timecode">0:00 / 0:00</span>
+              <button id="signal-download" class="download-button" type="button">Download WAV</button>
             </div>
             <button id="decode-button" class="button button-accent button-wide" type="button">
               Decode signal

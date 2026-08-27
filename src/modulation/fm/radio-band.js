@@ -1,5 +1,5 @@
-import { demodulateFM } from "./fm-demodulator.js";
-import { FmOscillator } from "./fm-modulator.js";
+import { demodulateFM } from "./demodulator.js";
+import { FmOscillator } from "./modulator.js";
 
 export const RADIO_STATION_CARRIERS = Object.freeze([5000, 12000, 19000]);
 export const RADIO_BAND_DEVIATION = 750;

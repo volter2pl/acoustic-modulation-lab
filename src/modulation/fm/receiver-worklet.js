@@ -1,4 +1,4 @@
-import { StreamingFmReceiver } from "./streaming-fm-receiver.js";
+import { StreamingFmReceiver } from "./streaming-receiver.js";
 
 /** Process the acoustic radio band on the browser's real-time audio thread. */
 class AcousticFmReceiverProcessor extends AudioWorkletProcessor {

@@ -1,4 +1,4 @@
-import { BiquadLowpass, lowpass, normalize, removeDc } from "./filters.js";
+import { BiquadLowpass, lowpass, normalize, removeDc } from "../../filters.js";
 
 const DEFAULT_MESSAGE_BANDWIDTH = 2400;
 

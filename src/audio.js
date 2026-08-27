@@ -1,8 +1,8 @@
 import { butterworthLowpass, fadeEdges, normalize, removeDc } from "./filters.js";
-import { DEFAULT_MESSAGE_BANDWIDTH } from "./fm-demodulator.js";
 
 export const TARGET_SAMPLE_RATE = 48000;
 export const MAX_DURATION_SECONDS = 120;
+export const DEFAULT_AUDIO_BANDWIDTH = 2400;
 
 let sharedAudioContext;
 
@@ -38,7 +38,7 @@ export function mixToMono(audioBuffer) {
 
 export function prepareMessage(
   audioBuffer,
-  bandwidth = DEFAULT_MESSAGE_BANDWIDTH,
+  bandwidth = DEFAULT_AUDIO_BANDWIDTH,
   filterOrder = 4,
 ) {
   // A wideband message creates wide FM sidebands. Limiting the message to the

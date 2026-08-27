@@ -11,7 +11,7 @@
   --muted-strong: #b7bec7;
   --primary: #8c7cff;
   --primary-bright: #a99dff;
-  --fm: #f0a45d;
+  --signal: #f0a45d;
   --result: #61d5a7;
   --danger: #ff7676;
   --radius-lg: 20px;
@@ -80,14 +80,14 @@ select:focus-visible,
 
 .brand-mark {
   display: grid;
-  width: 33px;
+  width: 43px;
   height: 33px;
   place-items: center;
   border: 1px solid rgb(169 157 255 / 40%);
   border-radius: 10px;
   color: var(--primary-bright);
   background: rgb(140 124 255 / 12%);
-  font-size: 10px;
+  font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.05em;
 }
@@ -127,9 +127,29 @@ main {
   background: rgb(140 124 255 / 8%);
 }
 
+.mode-switches {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.switch-group {
+  display: grid;
+  gap: 5px;
+}
+
+.switch-label {
+  padding-left: 4px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 720;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .experiment-switch {
   display: inline-flex;
-  margin-bottom: 16px;
   padding: 3px;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -185,8 +205,8 @@ main {
   content: "";
 }
 
-.fm-card::before {
-  background: var(--fm);
+.signal-card::before {
+  background: var(--signal);
 }
 
 .result-card::before {
@@ -523,7 +543,7 @@ main {
 .button-accent {
   margin-top: 18px;
   color: #17120d;
-  background: var(--fm);
+  background: var(--signal);
 }
 
 .button-accent:hover:not(:disabled) {
@@ -717,20 +737,6 @@ main {
   margin-left: auto;
 }
 
-.safe-volume {
-  margin-left: auto;
-  padding: 4px 6px;
-  border-radius: 5px;
-  color: #f4c79e;
-  background: rgb(240 164 93 / 9%);
-  font-size: 9px;
-  font-weight: 700;
-}
-
-.safe-volume + .download-button {
-  margin-left: 0;
-}
-
 .parameter-block {
   margin-bottom: 18px;
   padding: 15px;
@@ -780,7 +786,7 @@ input[type="range"] {
   height: 3px;
   margin: 0 0 18px;
   border-radius: 99px;
-  accent-color: var(--fm);
+  accent-color: var(--signal);
   cursor: pointer;
 }
 
@@ -797,10 +803,18 @@ input[type="range"] {
   margin-top: 7px;
 }
 
+.occupied-summary {
+  margin-top: 7px;
+}
+
 .frequency-range strong {
   color: #f4c79e;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
+}
+
+.frequency-range strong.is-warning {
+  color: #ffabab;
 }
 
 .rds-control {
@@ -895,11 +909,11 @@ input[type="range"] {
   padding: 0 9px;
 }
 
-.fm-loaded {
+.signal-loaded {
   margin-top: 20px;
 }
 
-.fm-loaded .spectrum-shell {
+.signal-loaded .spectrum-shell {
   height: 125px;
 }
 
@@ -1086,6 +1100,19 @@ input[type="range"] {
 
   .site-header {
     padding-top: 18px;
+  }
+
+  .mode-switches {
+    gap: 9px;
+    align-items: stretch;
+  }
+
+  .switch-group {
+    min-width: 0;
+  }
+
+  .experiment-switch button {
+    padding: 0 10px;
   }
 
   main {

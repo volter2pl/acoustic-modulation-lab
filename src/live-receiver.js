@@ -1,20 +1,19 @@
 import { getAudioContext } from "./audio.js";
-import {
-  RADIO_BAND_DEVIATION,
-  RADIO_BAND_MESSAGE_BANDWIDTH,
-} from "./radio-channel.js";
-
-const WORKLET_URL = new URL("./live-receiver-worklet.js", import.meta.url);
 const loadedWorklets = new WeakMap();
 
-async function loadReceiverWorklet(context) {
-  let loading = loadedWorklets.get(context);
+async function loadReceiverWorklet(context, workletUrl) {
+  let contextWorklets = loadedWorklets.get(context);
+  if (!contextWorklets) {
+    contextWorklets = new Map();
+    loadedWorklets.set(context, contextWorklets);
+  }
+  let loading = contextWorklets.get(workletUrl);
   if (!loading) {
     if (!context.audioWorklet || typeof AudioWorkletNode === "undefined") {
       throw new Error("This browser does not support live AudioWorklet reception.");
     }
-    loading = context.audioWorklet.addModule(WORKLET_URL.href);
-    loadedWorklets.set(context, loading);
+    loading = context.audioWorklet.addModule(workletUrl);
+    contextWorklets.set(workletUrl, loading);
   }
   await loading;
 }
@@ -27,7 +26,20 @@ async function loadReceiverWorklet(context) {
  * frequency changes the audible station without rebuilding a WAV file.
  */
 export class LiveRadioReceiver {
-  constructor({ onStateChanged = () => {} } = {}) {
+  constructor({
+    workletUrl,
+    processorName,
+    processorOptions,
+    outputGain = 0.82,
+    onStateChanged = () => {},
+  }) {
+    if (!workletUrl || !processorName) {
+      throw new TypeError("A live receiver requires a worklet URL and processor name.");
+    }
+    this.workletUrl = workletUrl instanceof URL ? workletUrl.href : workletUrl;
+    this.processorName = processorName;
+    this.processorOptions = { ...processorOptions };
+    this.receiverOutputGain = outputGain;
     this.onStateChanged = onStateChanged;
     this.samples = null;
     this.sampleRate = 0;
@@ -94,7 +106,7 @@ export class LiveRadioReceiver {
     }
 
     await context.resume();
-    await loadReceiverWorklet(context);
+    await loadReceiverWorklet(context, this.workletUrl);
     if (this.playing) return;
 
     if (!this.audioBuffer || this.bufferContext !== context) {
@@ -105,19 +117,18 @@ export class LiveRadioReceiver {
 
     const source = context.createBufferSource();
     source.buffer = this.audioBuffer;
-    const receiverNode = new AudioWorkletNode(context, "acoustic-fm-live-receiver", {
+    const receiverNode = new AudioWorkletNode(context, this.processorName, {
       numberOfInputs: 1,
       numberOfOutputs: 1,
       outputChannelCount: [1],
       parameterData: { tunedCarrier: this.carrier },
       processorOptions: {
         carrier: this.carrier,
-        deviation: RADIO_BAND_DEVIATION,
-        messageBandwidth: RADIO_BAND_MESSAGE_BANDWIDTH,
+        ...this.processorOptions,
       },
     });
     const outputGain = context.createGain();
-    outputGain.gain.value = 0.82;
+    outputGain.gain.value = this.receiverOutputGain;
     source.connect(receiverNode).connect(outputGain).connect(context.destination);
 
     const token = ++this.playbackToken;

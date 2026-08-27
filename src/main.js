@@ -1,3 +1,3 @@
-import { AcousticFmApp } from "./app.js";
+import { AcousticModulationApp } from "./app.js";
 
-new AcousticFmApp().start();
+new AcousticModulationApp().start();
