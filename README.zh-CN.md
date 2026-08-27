@@ -2,7 +2,7 @@
 
 **语言：** [English](README.md) | [Polski](README.pl.md) |
 [Deutsch](README.de.md) | [Español](README.es.md) |
-[Português (Brasil)](README.pt-BR.md) | 简体中文
+[Português (Brasil)](README.pt-BR.md) | 简体中文 | [日本語](README.ja.md)
 
 **声学调制实验室让普通浏览器中的 AM 和 FM 广播原理变得可见、可听。**
 
@@ -11,6 +11,7 @@
 原理完全相同。
 
 [打开简体中文实验室](https://volter2pl.github.io/acoustic-modulation-lab/?lang=zh-CN)
+· [日本語](https://volter2pl.github.io/acoustic-modulation-lab/?lang=ja)
 
 ```text
 语音或音乐

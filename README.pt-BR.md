@@ -2,7 +2,7 @@
 
 **Idioma:** [English](README.md) | [Polski](README.pl.md) |
 [Deutsch](README.de.md) | [Español](README.es.md) | Português (Brasil) |
-[简体中文](README.zh-CN.md)
+[简体中文](README.zh-CN.md) | [日本語](README.ja.md)
 
 **O Laboratório de Modulação Acústica torna os princípios do rádio AM e FM
 visíveis e audíveis diretamente em um navegador comum.**
@@ -14,6 +14,7 @@ das bandas laterais, da sintonia e da demodulação permanecem os mesmos.
 
 [Abrir o laboratório em Português (Brasil)](https://volter2pl.github.io/acoustic-modulation-lab/?lang=pt-BR)
 · [简体中文](https://volter2pl.github.io/acoustic-modulation-lab/?lang=zh-CN)
+· [日本語](https://volter2pl.github.io/acoustic-modulation-lab/?lang=ja)
 
 ```text
 voz ou música

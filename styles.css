@@ -1137,7 +1137,9 @@ input[type="range"] {
   }
 
   .header-links {
-    gap: 12px;
+    flex-direction: column;
+    gap: 7px;
+    align-items: flex-end;
   }
 
   .mode-switches {

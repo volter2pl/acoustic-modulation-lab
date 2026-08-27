@@ -2,7 +2,7 @@
 
 **语言：** [English](../en/am.md) | [Polski](../pl/am.md) |
 [Deutsch](../de/am.md) | [Español](../es/am.md) |
-[Português (Brasil)](../pt-BR/am.md) | 简体中文
+[Português (Brasil)](../pt-BR/am.md) | 简体中文 | [日本語](../ja/am.md)
 
 [返回实验室概述](../../README.zh-CN.md)
 

@@ -2,7 +2,7 @@
 
 **Idioma:** [English](../en/fm.md) | [Polski](../pl/fm.md) |
 [Deutsch](../de/fm.md) | Español | [Português (Brasil)](../pt-BR/fm.md) |
-[简体中文](../zh-CN/fm.md)
+[简体中文](../zh-CN/fm.md) | [日本語](../ja/fm.md)
 
 [Volver a la descripción del laboratorio](../../README.es.md)
 
