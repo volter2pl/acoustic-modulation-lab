@@ -1,6 +1,6 @@
 # Amplitude modulation
 
-**Language:** English | [Polski](../pl/am.md)
+**Language:** English | [Polski](../pl/am.md) | [Deutsch](../de/am.md)
 
 [Back to the laboratory overview](../../README.md)
 

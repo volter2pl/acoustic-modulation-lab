@@ -1,6 +1,6 @@
 # Acoustic Modulation Lab
 
-**Język:** [English](README.md) | Polski
+**Język:** [English](README.md) | Polski | [Deutsch](README.de.md)
 
 **Acoustic Modulation Lab pozwala zobaczyć i usłyszeć zasady modulacji radiowej
 AM i FM bezpośrednio w zwykłej przeglądarce.**
@@ -11,6 +11,7 @@ Ośrodek fizyczny jest inny, ale równania AM i FM oraz zasady powstawania wstę
 bocznych, strojenia i demodulacji pozostają takie same.
 
 [Otwórz laboratorium po polsku](https://volter2pl.github.io/acoustic-modulation-lab/?lang=pl)
+· [Deutsch](https://volter2pl.github.io/acoustic-modulation-lab/?lang=de)
 
 ```text
 głos lub muzyka
