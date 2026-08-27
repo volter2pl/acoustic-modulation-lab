@@ -2,7 +2,8 @@
 
 **言語：** [English](../en/am.md) | [Polski](../pl/am.md) |
 [Deutsch](../de/am.md) | [Español](../es/am.md) |
-[Português (Brasil)](../pt-BR/am.md) | [简体中文](../zh-CN/am.md) | 日本語
+[Português (Brasil)](../pt-BR/am.md) | [简体中文](../zh-CN/am.md) | 日本語 |
+[Français](../fr/am.md)
 
 [ラボの概要に戻る](../../README.ja.md)
 

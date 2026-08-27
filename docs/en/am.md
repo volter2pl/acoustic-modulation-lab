@@ -2,7 +2,8 @@
 
 **Language:** English | [Polski](../pl/am.md) | [Deutsch](../de/am.md) |
 [Español](../es/am.md) | [Português (Brasil)](../pt-BR/am.md) |
-[简体中文](../zh-CN/am.md) | [日本語](../ja/am.md)
+[简体中文](../zh-CN/am.md) | [日本語](../ja/am.md) |
+[Français](../fr/am.md)
 
 [Back to the laboratory overview](../../README.md)
 

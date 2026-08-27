@@ -2,7 +2,8 @@
 
 **言語：** [English](README.md) | [Polski](README.pl.md) |
 [Deutsch](README.de.md) | [Español](README.es.md) |
-[Português (Brasil)](README.pt-BR.md) | [简体中文](README.zh-CN.md) | 日本語
+[Português (Brasil)](README.pt-BR.md) | [简体中文](README.zh-CN.md) | 日本語 |
+[Français](README.fr.md)
 
 **音響変調ラボは、AM・FM ラジオの原理を一般的なブラウザー上で目と耳の
 両方から学べるようにします。**
@@ -12,6 +13,7 @@
 側波帯、チューニング、復調の原理は同じです。
 
 [日本語でラボを開く](https://volter2pl.github.io/acoustic-modulation-lab/?lang=ja)
+· [Français](https://volter2pl.github.io/acoustic-modulation-lab/?lang=fr)
 
 ```text
 音声または音楽

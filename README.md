@@ -2,7 +2,8 @@
 
 **Language:** English | [Polski](README.pl.md) | [Deutsch](README.de.md) |
 [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) |
-[简体中文](README.zh-CN.md) | [日本語](README.ja.md)
+[简体中文](README.zh-CN.md) | [日本語](README.ja.md) |
+[Français](README.fr.md)
 
 **Acoustic Modulation Lab makes AM and FM radio principles visible and audible
 inside an ordinary browser.**
@@ -19,6 +20,7 @@ principles remain the same.
 · [Português (Brasil)](https://volter2pl.github.io/acoustic-modulation-lab/?lang=pt-BR)
 · [简体中文](https://volter2pl.github.io/acoustic-modulation-lab/?lang=zh-CN)
 · [日本語](https://volter2pl.github.io/acoustic-modulation-lab/?lang=ja)
+· [Français](https://volter2pl.github.io/acoustic-modulation-lab/?lang=fr)
 
 ```text
 voice or music
