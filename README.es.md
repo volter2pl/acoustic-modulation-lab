@@ -1,7 +1,7 @@
 # Laboratorio de modulación acústica
 
 **Idioma:** [English](README.md) | [Polski](README.pl.md) |
-[Deutsch](README.de.md) | Español
+[Deutsch](README.de.md) | Español | [Português (Brasil)](README.pt-BR.md)
 
 **El Laboratorio de modulación acústica permite ver y escuchar los principios
 de la radio AM y FM directamente en un navegador convencional.**
@@ -13,6 +13,7 @@ FM y los principios de las bandas laterales, la sintonización y la demodulació
 siguen siendo los mismos.
 
 [Abrir el laboratorio en español](https://volter2pl.github.io/acoustic-modulation-lab/?lang=es)
+· [Português (Brasil)](https://volter2pl.github.io/acoustic-modulation-lab/?lang=pt-BR)
 
 ```text
 voz o música

@@ -1,7 +1,7 @@
 # Amplitude modulation
 
 **Language:** English | [Polski](../pl/am.md) | [Deutsch](../de/am.md) |
-[Español](../es/am.md)
+[Español](../es/am.md) | [Português (Brasil)](../pt-BR/am.md)
 
 [Back to the laboratory overview](../../README.md)
 

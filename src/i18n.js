@@ -1,5 +1,5 @@
 export const DEFAULT_LANGUAGE = "en";
-export const SUPPORTED_LANGUAGES = Object.freeze(["en", "pl", "de", "es"]);
+export const SUPPORTED_LANGUAGES = Object.freeze(["en", "pl", "de", "es", "pt-BR"]);
 
 export const TRANSLATIONS = Object.freeze({
   en: Object.freeze({
@@ -569,20 +569,169 @@ export const TRANSLATIONS = Object.freeze({
     "validation.amLowerSideband": "La banda lateral inferior de AM cae por debajo del rango de frecuencias válido.",
     "validation.amUpperSideband": "La banda lateral superior de AM está demasiado cerca del límite de Nyquist.",
     "validation.amReceiverRange": "El ancho de banda del receptor AM queda fuera del rango de frecuencias válido."
+  }),
+  "pt-BR": Object.freeze({
+    "meta.title": "Laboratório de Modulação Acústica",
+    "meta.description": "Compare as modulações AM e FM usando espectrogramas interativos e a sintonia ao vivo de um receptor de rádio.",
+    "aria.home": "Laboratório de Modulação Acústica — início",
+    "aria.github": "Ver o Laboratório de Modulação Acústica no GitHub",
+    "aria.language": "Idioma da interface",
+    "aria.modulationType": "Tipo de modulação",
+    "aria.experimentMode": "Modo do experimento",
+    "aria.signalFlow": "Modulação e demodulação acústicas",
+    "aria.sampleRecordings": "Gravações de exemplo",
+    "aria.playMessage": "Reproduzir mensagem",
+    "aria.playSignal": "Reproduzir sinal modulado",
+    "aria.playResult": "Reproduzir áudio recuperado",
+    "aria.stationPresets": "Frequências predefinidas das estações",
+    "aria.sourceForStation": "Fonte da estação em {frequency} kHz",
+    "aria.signalLevelForStation": "Nível do sinal da estação em {frequency} kHz",
+    "aria.play": "Reproduzir",
+    "aria.pause": "Pausar reprodução",
+    "aria.playReceiver": "Iniciar receptor ao vivo",
+    "aria.pauseReceiver": "Pausar receptor ao vivo",
+    "ui.modulation": "Modulação",
+    "ui.experiment": "Experimento",
+    "ui.singleStation": "Uma estação",
+    "ui.radioBand": "Faixa de rádio",
+    "ui.input": "ENTRADA",
+    "ui.message": "Mensagem",
+    "ui.stations": "Estações",
+    "ui.dropAudio": "Solte um arquivo de áudio aqui",
+    "ui.chooseFile": "Escolher arquivo",
+    "ui.recordVoice": "Gravar voz",
+    "ui.sampleRecordings": "gravações de exemplo",
+    "ui.backToRecording": "Voltar para a gravação atual",
+    "ui.recording": "Gravação",
+    "ui.record": "Gravar",
+    "ui.stopRecording": "Parar · {elapsed}",
+    "ui.changeSource": "Alterar fonte",
+    "ui.shorterPrograms": "Programas mais curtos continuam como portadoras não moduladas.",
+    "ui.modulationStage": "MODULAÇÃO",
+    "ui.signal": "Sinal {modulation}",
+    "ui.bandSignal": "Faixa de rádio {modulation}",
+    "ui.carrier": "Portadora",
+    "ui.deviation": "Desvio de frequência",
+    "ui.instantaneousRange": "Faixa instantânea",
+    "ui.modulationDepth": "Profundidade de modulação",
+    "ui.envelope": "Envoltória",
+    "ui.carrierOnly": "Somente portadora",
+    "ui.valid": "Válida",
+    "ui.overmodulated": "Sobremodulada",
+    "ui.occupiedBandwidth": "Largura de banda ocupada",
+    "ui.scaledRds": "escala 1:8",
+    "ui.none": "Nenhum",
+    "ui.programmeService": "Nome da estação (PS)",
+    "ui.psPlaceholder": "8 caracteres",
+    "ui.radioTextPlaceholder": "Até 64 caracteres",
+    "ui.bandStations": "Estações",
+    "ui.stationPlan": "5,0 · 12,0 · 19,0 kHz",
+    "ui.programmeBand": "Faixa do programa",
+    "ui.programmeBandValue": "2,0 kHz cada",
+    "ui.detection": "Detecção",
+    "ui.off": "Desativado",
+    "ui.encodeMessage": "Codificar mensagem",
+    "ui.encoding": "Codificando…",
+    "ui.buildBand": "Criar faixa de rádio",
+    "ui.buildingBand": "Criando faixa…",
+    "ui.or": "ou",
+    "ui.loadSignal": "Carregar seu próprio sinal {modulation}",
+    "ui.loadBand": "Carregar sua própria faixa de rádio {modulation}",
+    "ui.settingsChanged": "Configurações alteradas",
+    "ui.downloadWav": "Baixar WAV",
+    "ui.downloadSnapshot": "Baixar captura WAV",
+    "ui.decodeSignal": "Decodificar sinal",
+    "ui.decoding": "Decodificando…",
+    "ui.demodulation": "DEMODULAÇÃO",
+    "ui.recoveredAudio": "Áudio recuperado",
+    "ui.tunedStation": "Estação sintonizada",
+    "ui.receiverTuning": "Sintonia do receptor",
+    "ui.updateSpectrum": "Atualizar espectro e WAV",
+    "ui.updating": "Atualizando…",
+    "ui.resultHere": "O resultado aparecerá aqui",
+    "ui.tuneReceiver": "Sintonize o receptor",
+    "ui.prepareSignal": "Primeiro prepare um sinal {modulation}",
+    "ui.prepareBand": "Primeiro prepare uma faixa de rádio",
+    "ui.recoveredMessage": "Mensagem recuperada",
+    "ui.ready": "Pronto",
+    "ui.liveReceiver": "Receptor ao vivo",
+    "ui.generated": "Gerado",
+    "ui.uploaded": "Carregado",
+    "ui.use": "Usar",
+    "ui.customFile": "Arquivo personalizado…",
+    "ui.signalLevel": "Nível do sinal",
+    "ui.spectrumAt": "Espectro: {frequency} kHz",
+    "ui.liveSpectrumAt": "Ao vivo + espectro: {frequency} kHz",
+    "ui.spectrumUnavailable": "A visualização do espectro não está disponível.",
+    "ui.rdsMissing": "Nenhum grupo RDS válido foi recuperado",
+    "ui.rdsRecovered": "Recuperado após {seconds} s · {groups} grupos válidos",
+    "ui.rdsCheck": "Verifique o modo, a portadora e o desvio selecionados",
+    "ui.threeStations": "3 estações",
+    "audio.mono": "mono",
+    "audio.stereoToMono": "estéreo → mono",
+    "examples.femaleSpeech": "Voz feminina",
+    "examples.femaleSpeechMeta": "1:24 · MP3 · 1,6 MB",
+    "examples.violinMusic": "Música de violino",
+    "examples.violinMusicMeta": "0:25 · MP3 · 783 KB",
+    "examples.testSignal": "Sinal de teste",
+    "examples.testSignalMeta": "0:42 · MP3 · 716 KB",
+    "rds.defaultPs": "ACUSTICA",
+    "rds.defaultRadioText": "FM transmite áudio e dados ao mesmo tempo.",
+    "status.loadingSample": "Carregando gravação de exemplo…",
+    "status.loadingStations": "Carregando estações de rádio…",
+    "status.loadingNamed": "Carregando {name}…",
+    "name.modulatedMessage": "Mensagem modulada em {modulation}",
+    "name.radioBand": "Faixa de rádio {modulation} com três estações",
+    "name.microphone": "Gravação do microfone",
+    "name.stationFallback": "Estação",
+    "name.tunedFrequency": "Frequência sintonizada",
+    "name.betweenStations": "Entre estações",
+    "errors.invalidDrop": "O arquivo solto não é um arquivo de áudio compatível.",
+    "errors.webAudioUnsupported": "Este navegador não oferece suporte à Web Audio API.",
+    "errors.recordingUnsupported": "Este navegador não permite gravação pelo microfone.",
+    "errors.maxDuration": "A duração máxima da gravação é de {seconds} segundos.",
+    "errors.readAudio": "Não foi possível ler o arquivo de áudio.",
+    "errors.loadSampleStatus": "Não foi possível carregar o exemplo (status {status}).",
+    "errors.loadNamedStatus": "Não foi possível carregar {name} (status {status}).",
+    "errors.loadSample": "Não foi possível carregar a gravação de exemplo.",
+    "errors.loadStations": "Não foi possível carregar as estações de rádio.",
+    "errors.loadStationProgramme": "Não foi possível carregar o programa da estação.",
+    "errors.readSignal": "Não foi possível ler o sinal modulado.",
+    "errors.encode": "Não foi possível codificar a mensagem.",
+    "errors.sameSampleRate": "Todos os programas das estações devem usar a mesma taxa de amostragem.",
+    "errors.buildBand": "Não foi possível criar a faixa de rádio.",
+    "errors.decode": "Não foi possível decodificar o sinal modulado.",
+    "errors.startReceiver": "Não foi possível iniciar o receptor ao vivo.",
+    "errors.seekReceiver": "Não foi possível alterar a posição do receptor ao vivo.",
+    "errors.startMicrophone": "Não foi possível iniciar o microfone.",
+    "validation.fmInstantaneousNyquist": "A faixa de frequência instantânea ultrapassa o limite de Nyquist.",
+    "validation.fmBandwidthNyquist": "A largura de banda FM estimada está muito próxima do limite de Nyquist.",
+    "validation.fmBandwidthLower": "A largura de banda FM estimada se estende abaixo da faixa de frequências válida.",
+    "validation.fmReceiverRange": "A largura de banda do receptor fica fora da faixa de frequências válida.",
+    "validation.amLowerSideband": "A banda lateral inferior de AM se estende abaixo da faixa de frequências válida.",
+    "validation.amUpperSideband": "A banda lateral superior de AM está muito próxima do limite de Nyquist.",
+    "validation.amReceiverRange": "A largura de banda do receptor AM fica fora da faixa de frequências válida."
   })
 });
 
 export function getLanguage(search = "") {
   const requested = new URLSearchParams(search).get("lang");
-  return SUPPORTED_LANGUAGES.includes(requested) ? requested : DEFAULT_LANGUAGE;
+  return (
+    SUPPORTED_LANGUAGES.find(
+      (language) => language.toLowerCase() === requested?.toLowerCase(),
+    ) ?? DEFAULT_LANGUAGE
+  );
 }
 
 export function createI18n(language = DEFAULT_LANGUAGE) {
-  const activeLanguage = SUPPORTED_LANGUAGES.includes(language)
-    ? language
-    : DEFAULT_LANGUAGE;
+  const activeLanguage =
+    SUPPORTED_LANGUAGES.find(
+      (candidate) => candidate.toLowerCase() === String(language).toLowerCase(),
+    ) ?? DEFAULT_LANGUAGE;
   const locale =
-    { pl: "pl-PL", de: "de-DE", es: "es-ES" }[activeLanguage] ?? "en-US";
+    { pl: "pl-PL", de: "de-DE", es: "es-ES", "pt-BR": "pt-BR" }[
+      activeLanguage
+    ] ?? "en-US";
 
   const t = (key, variables = {}) => {
     const template =
