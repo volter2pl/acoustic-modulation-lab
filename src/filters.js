@@ -38,6 +38,42 @@ export class BiquadLowpass {
   }
 }
 
+/** A narrow rejection section used to remove a known reference tone. */
+export class BiquadNotch {
+  constructor(sampleRate, centerFrequency, q = 12) {
+    const clampedFrequency = Math.max(20, Math.min(centerFrequency, sampleRate * 0.49));
+    const omega = (2 * Math.PI * clampedFrequency) / sampleRate;
+    const cosine = Math.cos(omega);
+    const alpha = Math.sin(omega) / (2 * q);
+    const a0 = 1 + alpha;
+
+    this.b0 = 1 / a0;
+    this.b1 = (-2 * cosine) / a0;
+    this.b2 = 1 / a0;
+    this.a1 = (-2 * cosine) / a0;
+    this.a2 = (1 - alpha) / a0;
+    this.x1 = 0;
+    this.x2 = 0;
+    this.y1 = 0;
+    this.y2 = 0;
+  }
+
+  process(sample) {
+    const output =
+      this.b0 * sample +
+      this.b1 * this.x1 +
+      this.b2 * this.x2 -
+      this.a1 * this.y1 -
+      this.a2 * this.y2;
+
+    this.x2 = this.x1;
+    this.x1 = sample;
+    this.y2 = this.y1;
+    this.y1 = output;
+    return output;
+  }
+}
+
 export function lowpass(signal, sampleRate, cutoff, stages = 2) {
   let output = Float32Array.from(signal);
 
@@ -50,6 +86,39 @@ export function lowpass(signal, sampleRate, cutoff, stages = 2) {
     output = filtered;
   }
 
+  return output;
+}
+
+/**
+ * Even-order Butterworth low-pass made from correctly tuned biquad sections.
+ * Unlike repeating identical sections, this keeps the total response at
+ * approximately -3 dB at the cutoff while providing a steep stop band.
+ */
+export function butterworthLowpass(signal, sampleRate, cutoff, order = 8) {
+  if (!Number.isInteger(order) || order < 2 || order % 2) {
+    throw new RangeError("Butterworth filter order must be a positive even integer.");
+  }
+
+  let output = Float32Array.from(signal);
+  for (let section = 0; section < order / 2; section += 1) {
+    const angle = (Math.PI * (2 * section + 1)) / (2 * order);
+    const q = 1 / (2 * Math.sin(angle));
+    const filter = new BiquadLowpass(sampleRate, cutoff, q);
+    const filtered = new Float32Array(output.length);
+    for (let index = 0; index < output.length; index += 1) {
+      filtered[index] = filter.process(output[index]);
+    }
+    output = filtered;
+  }
+  return output;
+}
+
+export function notch(signal, sampleRate, centerFrequency, q = 12) {
+  const filter = new BiquadNotch(sampleRate, centerFrequency, q);
+  const output = new Float32Array(signal.length);
+  for (let index = 0; index < signal.length; index += 1) {
+    output[index] = filter.process(signal[index]);
+  }
   return output;
 }
 

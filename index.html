@@ -13,6 +13,10 @@
       defer
       src="https://cdn.jsdelivr.net/npm/wavesurfer.js@7.12.11/dist/wavesurfer.min.js"
     ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/wavesurfer.js@7.12.11/dist/plugins/spectrogram.min.js"
+    ></script>
     <script type="module" src="./src/main.js"></script>
   </head>
   <body>
@@ -76,8 +80,10 @@
               </div>
             </div>
 
-            <div class="wave-shell source-wave">
-              <div id="source-waveform" class="waveform"></div>
+            <div class="spectrum-shell source-spectrum">
+              <div id="source-spectrum" class="spectrum"></div>
+              <div id="source-spectrum-playhead" class="spectrum-playhead"></div>
+              <div id="source-spectrum-engine" class="spectrum-engine"></div>
             </div>
             <div class="player-row">
               <button id="source-play" class="play-button" type="button" aria-label="Play message">▶</button>
@@ -117,6 +123,30 @@
               <span>Instantaneous range</span>
               <strong id="frequency-range">17.0–19.0 kHz</strong>
             </div>
+            <div class="frequency-range">
+              <span>Occupied bandwidth</span>
+              <strong id="occupied-bandwidth">≈6.8 kHz</strong>
+            </div>
+
+            <div class="rds-control">
+              <label for="rds-mode">
+                <span>RDS</span>
+                <small>scaled 1:8</small>
+              </label>
+              <select id="rds-mode">
+                <option value="none">None</option>
+                <option value="ps">PS</option>
+                <option value="radiotext">RadioText</option>
+              </select>
+            </div>
+
+            <div id="rds-input-wrap" class="rds-input" hidden>
+              <label for="rds-text">
+                <span id="rds-input-label">Programme Service</span>
+                <small id="rds-counter">0/8</small>
+              </label>
+              <input id="rds-text" type="text" maxlength="8" autocomplete="off" />
+            </div>
             <p id="parameter-warning" class="inline-warning" hidden></p>
           </div>
 
@@ -138,8 +168,10 @@
               </div>
               <span id="fm-stale" class="stale-label" hidden>Settings changed</span>
             </div>
-            <div class="wave-shell fm-wave">
-              <div id="fm-waveform" class="waveform"></div>
+            <div class="spectrum-shell fm-spectrum">
+              <div id="fm-spectrum" class="spectrum"></div>
+              <div id="fm-spectrum-playhead" class="spectrum-playhead"></div>
+              <div id="fm-spectrum-engine" class="spectrum-engine"></div>
             </div>
             <div class="player-row">
               <button id="fm-play" class="play-button" type="button" aria-label="Play FM signal">▶</button>
@@ -180,8 +212,17 @@
               </div>
               <span class="state-badge success-badge">Ready</span>
             </div>
-            <div class="wave-shell result-wave">
-              <div id="result-waveform" class="waveform"></div>
+            <div id="result-rds" class="rds-result" hidden>
+              <span id="result-rds-mode" class="rds-result-mode">PS</span>
+              <div>
+                <strong id="result-rds-text">—</strong>
+                <span id="result-rds-meta">—</span>
+              </div>
+            </div>
+            <div class="spectrum-shell result-spectrum">
+              <div id="result-spectrum" class="spectrum"></div>
+              <div id="result-spectrum-playhead" class="spectrum-playhead"></div>
+              <div id="result-spectrum-engine" class="spectrum-engine"></div>
             </div>
             <div class="player-row">
               <button id="result-play" class="play-button" type="button" aria-label="Play recovered audio">▶</button>

@@ -41,7 +41,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -51,6 +52,7 @@ button {
 
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 [tabindex]:focus-visible {
   outline: 2px solid var(--primary-bright);
   outline-offset: 3px;
@@ -519,21 +521,50 @@ main {
   font-size: 8px;
 }
 
-.wave-shell {
+.spectrum-shell {
   position: relative;
   height: 190px;
-  padding: 13px 10px;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 13px;
-  background:
-    linear-gradient(to right, rgb(255 255 255 / 2%) 1px, transparent 1px) 0 0 / 25% 100%,
-    linear-gradient(to bottom, transparent 49.5%, rgb(255 255 255 / 5%) 50%, transparent 50.5%),
-    var(--surface-soft);
+  background: var(--surface-soft);
 }
 
-.waveform {
+.spectrum {
   height: 100%;
+  cursor: crosshair;
+}
+
+.spectrum-playhead {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: rgb(255 255 255 / 70%);
+  box-shadow: 0 0 5px rgb(255 255 255 / 35%);
+  pointer-events: none;
+}
+
+.spectrum-engine {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spectrum-error {
+  display: grid;
+  height: 100%;
+  margin: 0;
+  place-items: center;
+  color: var(--muted);
+  font-size: 10px;
 }
 
 .player-row {
@@ -627,10 +658,77 @@ input[type="range"] {
   font-size: 10px;
 }
 
+.frequency-range + .frequency-range {
+  margin-top: 7px;
+}
+
 .frequency-range strong {
   color: #f4c79e;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
+}
+
+.rds-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  gap: 12px;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--border);
+}
+
+.rds-control label,
+.rds-input label {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  color: var(--muted-strong);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.rds-control small,
+.rds-input small {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.rds-control select,
+.rds-input input {
+  width: 100%;
+  height: 34px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface-raised);
+  font-size: 11px;
+}
+
+.rds-control select {
+  padding: 0 9px;
+  cursor: pointer;
+}
+
+.rds-input {
+  margin-top: 12px;
+}
+
+.rds-input label {
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.rds-input input {
+  padding: 0 10px;
+}
+
+.rds-control select:disabled,
+.rds-input input:disabled {
+  cursor: wait;
+  opacity: 0.5;
 }
 
 .inline-warning {
@@ -666,7 +764,7 @@ input[type="range"] {
   margin-top: 20px;
 }
 
-.fm-loaded .wave-shell {
+.fm-loaded .spectrum-shell {
   height: 125px;
 }
 
@@ -700,8 +798,58 @@ input[type="range"] {
   font-size: 28px;
 }
 
-.result-loaded .wave-shell {
+.result-loaded .spectrum-shell {
   height: 300px;
+}
+
+.rds-result {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 11px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 11px 12px;
+  border: 1px solid rgb(97 213 167 / 22%);
+  border-radius: 11px;
+  background: rgb(97 213 167 / 5%);
+}
+
+.rds-result-mode {
+  padding: 5px 7px;
+  border-radius: 6px;
+  color: #a9efd4;
+  background: rgb(97 213 167 / 11%);
+  font-size: 9px;
+  font-weight: 760;
+}
+
+.rds-result strong,
+.rds-result div > span {
+  display: block;
+}
+
+.rds-result strong {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 660;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rds-result div > span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.rds-result.is-missing {
+  border-color: rgb(255 118 118 / 24%);
+  background: rgb(255 118 118 / 5%);
+}
+
+.rds-result.is-missing .rds-result-mode {
+  color: #ffc0c0;
+  background: rgb(255 118 118 / 10%);
 }
 
 .safety-note {
@@ -778,11 +926,11 @@ input[type="range"] {
     min-height: 290px;
   }
 
-  .wave-shell {
+  .spectrum-shell {
     height: 160px;
   }
 
-  .result-loaded .wave-shell {
+  .result-loaded .spectrum-shell {
     height: 220px;
   }
 }

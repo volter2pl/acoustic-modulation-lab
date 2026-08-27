@@ -1,8 +1,21 @@
 import { decodeAudioBlob, describeAudio, formatDuration, mixToMono, prepareMessage } from "./audio.js";
 import { AUDIO_EXAMPLES } from "./examples.js";
-import { DEFAULT_MESSAGE_BANDWIDTH, demodulateFM } from "./fm-demodulator.js";
+import {
+  DEFAULT_MESSAGE_BANDWIDTH,
+  demodulateFM,
+  demodulateFMComposite,
+} from "./fm-demodulator.js";
 import { modulateFM } from "./fm-modulator.js";
 import { MicrophoneRecorder } from "./recorder.js";
+import {
+  createRdsComposite,
+  decodeRdsComposite,
+  RDS_AUDIO_BANDWIDTH,
+  RDS_AUDIO_FILTER_ORDER,
+  RDS_BASEBAND_BANDWIDTH,
+  RDS_MODES,
+  recoverAudioFromRdsComposite,
+} from "./rds.js";
 import { AppUI, downloadBlob } from "./ui.js";
 import { createWavBlob } from "./wav.js";
 
@@ -23,6 +36,12 @@ export class AcousticFmApp {
       decodedBlob: null,
       busy: false,
       operation: null,
+      rdsMode: RDS_MODES.NONE,
+      carrierWithoutRds: 18000,
+      rdsTexts: {
+        [RDS_MODES.PS]: "ACOUSTIC",
+        [RDS_MODES.RADIOTEXT]: "FM carries audio and data together.",
+      },
     };
     this.recorder = new MicrophoneRecorder();
     this.ui = new AppUI(AUDIO_EXAMPLES, {
@@ -32,6 +51,8 @@ export class AcousticFmApp {
       onEncode: () => this.encodeSource(),
       onDecode: () => this.decodeFm(),
       onParametersChanged: () => this.parametersChanged(),
+      onRdsModeChanged: (mode) => this.rdsModeChanged(mode),
+      onRdsTextChanged: (text) => this.rdsTextChanged(text),
       onToggleRecording: () => this.toggleRecording(),
       onShowSourceChooser: () => this.ui.showSourceChooser(Boolean(this.state.source)),
       onCancelSourceChooser: () => this.ui.hideSourceChooser(),
@@ -43,6 +64,7 @@ export class AcousticFmApp {
   }
 
   start() {
+    this.updateCarrierLimits();
     this.renderControls();
   }
 
@@ -54,15 +76,43 @@ export class AcousticFmApp {
     return this.state.fm?.sampleRate || this.state.source?.sampleRate || 48000;
   }
 
+  getRdsConfig() {
+    return this.ui.getRdsConfig();
+  }
+
+  getMessageBandwidth() {
+    return this.getRdsConfig().mode === RDS_MODES.NONE
+      ? DEFAULT_MESSAGE_BANDWIDTH
+      : RDS_BASEBAND_BANDWIDTH;
+  }
+
+  getCarrierLimits(sampleRate = this.getCurrentSampleRate()) {
+    if (this.getRdsConfig().mode === RDS_MODES.NONE) {
+      return { min: 5000, max: Math.min(20000, sampleRate / 2 - 1000) };
+    }
+
+    const { deviation } = this.getParameters();
+    const guard = 500;
+    const min = Math.ceil((RDS_BASEBAND_BANDWIDTH + deviation + guard) / 100) * 100;
+    const max =
+      Math.floor((sampleRate / 2 - RDS_BASEBAND_BANDWIDTH - deviation - guard) / 100) * 100;
+    return { min, max };
+  }
+
+  updateCarrierLimits(preferredValue) {
+    const limits = this.getCarrierLimits();
+    this.ui.setCarrierLimits(limits, preferredValue);
+  }
+
   validateParameters(sampleRate = this.getCurrentSampleRate()) {
     const { carrier, deviation } = this.getParameters();
     const nyquist = sampleRate / 2;
-    const occupiedHalfBandwidth = deviation + DEFAULT_MESSAGE_BANDWIDTH;
+    const occupiedHalfBandwidth = deviation + this.getMessageBandwidth();
 
     if (carrier + deviation >= nyquist) {
       return "The instantaneous-frequency range exceeds the Nyquist limit.";
     }
-    if (carrier + occupiedHalfBandwidth > nyquist * 0.96) {
+    if (carrier + occupiedHalfBandwidth > nyquist - 500) {
       return "The estimated FM bandwidth is too close to the Nyquist limit.";
     }
     if (carrier - occupiedHalfBandwidth < 150) {
@@ -74,9 +124,12 @@ export class AcousticFmApp {
   isGeneratedSignalStale() {
     if (this.state.fmOrigin !== "generated" || !this.state.fmParameters) return false;
     const { carrier, deviation } = this.getParameters();
+    const { mode, text } = this.getRdsConfig();
     return (
       this.state.fmParameters.carrier !== carrier ||
-      this.state.fmParameters.deviation !== deviation
+      this.state.fmParameters.deviation !== deviation ||
+      this.state.fmParameters.rdsMode !== mode ||
+      this.state.fmParameters.rdsText !== text
     );
   }
 
@@ -88,6 +141,7 @@ export class AcousticFmApp {
       stale: this.isGeneratedSignalStale(),
       busy: this.state.busy,
       operation: this.state.operation,
+      occupiedBandwidth: 2 * (this.getParameters().deviation + this.getMessageBandwidth()),
     });
   }
 
@@ -175,6 +229,7 @@ export class AcousticFmApp {
   async encodeSource() {
     if (!this.state.source || this.state.busy) return;
     const { carrier, deviation } = this.getParameters();
+    const rds = this.getRdsConfig();
     const warning = this.validateParameters(this.state.source.sampleRate);
     if (warning) return this.ui.setStatus(warning);
 
@@ -185,8 +240,13 @@ export class AcousticFmApp {
     try {
       // Source preparation is part of the channel model: it limits the message
       // bandwidth before FM modulation, preventing avoidable aliasing.
-      const message = prepareMessage(this.state.source);
-      const samples = modulateFM(message, this.state.source.sampleRate, carrier, deviation);
+      const audioBandwidth =
+        rds.mode === RDS_MODES.NONE ? DEFAULT_MESSAGE_BANDWIDTH : RDS_AUDIO_BANDWIDTH;
+      const filterOrder =
+        rds.mode === RDS_MODES.NONE ? 4 : RDS_AUDIO_FILTER_ORDER;
+      const message = prepareMessage(this.state.source, audioBandwidth, filterOrder);
+      const composite = createRdsComposite(message, this.state.source.sampleRate, rds);
+      const samples = modulateFM(composite, this.state.source.sampleRate, carrier, deviation);
       const blob = createWavBlob(samples, this.state.source.sampleRate);
 
       this.state.fm = {
@@ -196,7 +256,12 @@ export class AcousticFmApp {
       };
       this.state.fmBlob = blob;
       this.state.fmOrigin = "generated";
-      this.state.fmParameters = { carrier, deviation };
+      this.state.fmParameters = {
+        carrier,
+        deviation,
+        rdsMode: rds.mode,
+        rdsText: rds.text,
+      };
       this.clearDecoded();
 
       await this.ui.showFm({
@@ -215,6 +280,7 @@ export class AcousticFmApp {
   async decodeFm() {
     if (!this.state.fm || this.state.busy) return;
     const { carrier, deviation } = this.getParameters();
+    const rds = this.getRdsConfig();
     const warning = this.validateParameters(this.state.fm.sampleRate);
     if (warning) return this.ui.setStatus(warning);
 
@@ -223,13 +289,27 @@ export class AcousticFmApp {
     await this.yieldToBrowser();
 
     try {
-      const samples = demodulateFM(
-        this.state.fm.samples,
-        this.state.fm.sampleRate,
-        carrier,
-        deviation,
-        DEFAULT_MESSAGE_BANDWIDTH,
-      );
+      let samples;
+      let decodedRds = null;
+      if (rds.mode === RDS_MODES.NONE) {
+        samples = demodulateFM(
+          this.state.fm.samples,
+          this.state.fm.sampleRate,
+          carrier,
+          deviation,
+          DEFAULT_MESSAGE_BANDWIDTH,
+        );
+      } else {
+        const composite = demodulateFMComposite(
+          this.state.fm.samples,
+          this.state.fm.sampleRate,
+          carrier,
+          deviation,
+          RDS_BASEBAND_BANDWIDTH,
+        );
+        samples = recoverAudioFromRdsComposite(composite, this.state.fm.sampleRate);
+        decodedRds = decodeRdsComposite(composite, this.state.fm.sampleRate, rds.mode);
+      }
       const blob = createWavBlob(samples, this.state.fm.sampleRate);
       this.state.decodedBlob = blob;
       await this.ui.showResult({
@@ -238,6 +318,8 @@ export class AcousticFmApp {
           duration: samples.length / this.state.fm.sampleRate,
           sampleRate: this.state.fm.sampleRate,
         }),
+        rds: decodedRds,
+        rdsExpected: rds.mode !== RDS_MODES.NONE,
       });
     } catch (error) {
       this.ui.setStatus(error instanceof Error ? error.message : "Could not decode the FM signal.");
@@ -247,6 +329,34 @@ export class AcousticFmApp {
   }
 
   parametersChanged() {
+    this.clearDecoded();
+    this.updateCarrierLimits();
+    this.renderControls();
+  }
+
+  rdsModeChanged(mode) {
+    const previousMode = this.state.rdsMode;
+    const currentCarrier = this.getParameters().carrier;
+    if (previousMode === RDS_MODES.NONE && mode !== RDS_MODES.NONE) {
+      this.state.carrierWithoutRds = currentCarrier;
+    }
+
+    this.state.rdsMode = mode;
+    this.ui.configureRds(mode, this.state.rdsTexts[mode] ?? "");
+    const preferredCarrier =
+      mode === RDS_MODES.NONE
+        ? this.state.carrierWithoutRds
+        : previousMode === RDS_MODES.NONE
+          ? 12000
+          : currentCarrier;
+    this.updateCarrierLimits(preferredCarrier);
+    this.clearDecoded();
+    this.renderControls();
+  }
+
+  rdsTextChanged(text) {
+    const { mode } = this.getRdsConfig();
+    this.state.rdsTexts[mode] = text;
     this.clearDecoded();
     this.renderControls();
   }

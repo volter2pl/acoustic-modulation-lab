@@ -48,17 +48,19 @@ analogy that applies the same FM mathematics to another kind of wave:
 
 The application presents the experiment as three consecutive signals:
 
-1. **Message** — the original recording. Its waveform visibly follows the
-   changing amplitude of speech or music.
-2. **FM signal** — one nearly constant-amplitude waveform. The message is now
-   stored in the changing distance between its cycles, not in its height.
-3. **Recovered audio** — the result of measuring those frequency changes and
-   converting them back into sample values.
+1. **Message** — the original recording. Its spectrogram shows how speech or
+   music energy changes across the audible frequencies over time.
+2. **FM signal** — the message is concentrated around an acoustic carrier and
+   its sidebands. Information is stored in frequency changes, not amplitude.
+3. **Recovered audio** — the receiver removes the carrier and reconstructs the
+   original low-frequency content.
 
-At a normal zoom level, a high-frequency FM waveform often looks like a solid
-band. This is expected: thousands of cycles are compressed into a few pixels.
-Zooming in reveals that the cycles become closer together when instantaneous
-frequency rises and farther apart when it falls.
+Each visualization is a spectrogram: time runs from left to right, frequency
+rises from bottom to top, and brighter color means more energy. The message and
+recovered-audio views cover 0–8 kHz, while the FM view covers the complete
+0–24 kHz range of a 48 kHz audio channel. This makes the carrier, occupied
+bandwidth, and high-frequency RDS sidebands much easier to identify than in an
+amplitude waveform containing thousands of cycles per second.
 
 Try changing the controls and listen for these effects:
 
@@ -160,6 +162,59 @@ For this reason, the experiment limits the source to a 2.4 kHz speech band befor
 modulation and rejects unsafe carrier/deviation combinations. This favors a
 clear educational speech experiment over music fidelity; it is a channel-design
 choice, not an inherent limit of FM.
+
+## Adding RDS to the transmission
+
+RDS shows that an FM station can carry audio and digital information at the
+same time. In a real stereo FM multiplex, RDS occupies a suppressed subcarrier
+at 57 kHz, exactly three times the 19 kHz stereo pilot, and sends data at
+1187.5 bit/s. It does not wait for a pause in the programme: its low-level data
+signal is continuously added beside the audio before the complete multiplex
+modulates the FM carrier.
+
+A 48 kHz audio file cannot contain a 57 kHz signal, so this experiment scales
+all RDS clocks by eight while preserving their relationships:
+
+| Component | Broadcast RDS | Acoustic model |
+| --- | ---: | ---: |
+| Pilot | 19 kHz | 2.375 kHz |
+| RDS subcarrier | 57 kHz | 7.125 kHz |
+| Data rate | 1187.5 bit/s | 148.4375 bit/s |
+
+Choose one of three modes in the interface:
+
+- **None** transmits audio alone.
+- **PS** sends an eight-character Programme Service name in four 0A groups.
+- **RadioText** sends up to 64 characters in 2A groups.
+
+The model includes RDS blocks, checkwords, differential coding, and biphase
+symbols. The receiver has to recover valid groups from the demodulated waveform;
+the text is not stored as file metadata. A PS cycle takes about three seconds,
+while RadioText takes longer as more four-character segments are added. If the
+recording is too short to carry one complete cycle, the generated signal is
+extended with silent programme audio.
+
+After FM demodulation, the receiver treats the result as a multiplex and splits
+it into two paths. The full-band path feeds the RDS decoder. The listening path
+removes the scaled 2.375 kHz pilot with a notch filter and then applies a steep
+1.8 kHz programme low-pass. The recovered-audio player and spectrogram therefore
+contain the programme only; decoded PS or RadioText appears separately in the
+result card. This mirrors a radio receiver instead of relying on the data being
+inaudible.
+
+The audio path restores the transmitter's known programme level rather than
+peak-normalizing its result. This distinction matters during silence: automatic
+normalization would turn tiny filter remnants into a loud and misleading tone.
+
+RDS uses more baseband bandwidth, so enabling it narrows the safe acoustic
+carrier range. With a 48 kHz sample rate and ±1 kHz deviation, the carrier can
+be adjusted from approximately 9.1 to 14.9 kHz. The carrier is still a user
+control; the interface only prevents combinations that would cross the bottom
+of the spectrum or the 24 kHz Nyquist limit.
+
+This is a scaled educational implementation, not a waveform that a commercial
+RDS radio can receive. The lower clock frequencies make the multiplex visible,
+audible, and representable in an ordinary browser audio file.
 
 ## From a file experiment to a real channel
 

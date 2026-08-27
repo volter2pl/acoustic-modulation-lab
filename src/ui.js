@@ -1,5 +1,5 @@
 import { formatDuration } from "./audio.js";
-import { WaveformPlayer } from "./waveform.js";
+import { SpectrumPlayer } from "./spectrum.js";
 
 const ELEMENT_IDS = [
   "app-status",
@@ -23,6 +23,12 @@ const ELEMENT_IDS = [
   "deviation",
   "deviation-value",
   "frequency-range",
+  "occupied-bandwidth",
+  "rds-mode",
+  "rds-input-wrap",
+  "rds-input-label",
+  "rds-text",
+  "rds-counter",
   "parameter-warning",
   "encode-button",
   "fm-file-button",
@@ -39,6 +45,10 @@ const ELEMENT_IDS = [
   "result-empty",
   "result-loaded",
   "result-meta",
+  "result-rds",
+  "result-rds-mode",
+  "result-rds-text",
+  "result-rds-meta",
   "result-play",
   "result-time",
   "result-download",
@@ -57,27 +67,36 @@ export class AppUI {
 
   createPlayers() {
     return {
-      source: new WaveformPlayer({
-        container: document.getElementById("source-waveform"),
+      source: new SpectrumPlayer({
+        container: document.getElementById("source-spectrum"),
+        engineContainer: document.getElementById("source-spectrum-engine"),
+        playhead: document.getElementById("source-spectrum-playhead"),
         playButton: this.elements["source-play"],
         timeElement: this.elements["source-time"],
-        waveColor: "#6459ae",
-        progressColor: "#a99dff",
+        accentColor: [169, 157, 255],
+        frequencyMax: 8000,
+        height: 190,
       }),
-      fm: new WaveformPlayer({
-        container: document.getElementById("fm-waveform"),
+      fm: new SpectrumPlayer({
+        container: document.getElementById("fm-spectrum"),
+        engineContainer: document.getElementById("fm-spectrum-engine"),
+        playhead: document.getElementById("fm-spectrum-playhead"),
         playButton: this.elements["fm-play"],
         timeElement: this.elements["fm-time"],
-        waveColor: "#8e633e",
-        progressColor: "#f0a45d",
+        accentColor: [240, 164, 93],
+        frequencyMax: 24000,
+        height: 125,
         volume: 0.12,
       }),
-      result: new WaveformPlayer({
-        container: document.getElementById("result-waveform"),
+      result: new SpectrumPlayer({
+        container: document.getElementById("result-spectrum"),
+        engineContainer: document.getElementById("result-spectrum-engine"),
+        playhead: document.getElementById("result-spectrum-playhead"),
         playButton: this.elements["result-play"],
         timeElement: this.elements["result-time"],
-        waveColor: "#367a63",
-        progressColor: "#61d5a7",
+        accentColor: [97, 213, 167],
+        frequencyMax: 8000,
+        height: 300,
       }),
     };
   }
@@ -89,7 +108,51 @@ export class AppUI {
     };
   }
 
-  renderControls({ warning, sourceReady, fmReady, stale, busy, operation }) {
+  getRdsConfig() {
+    const mode = this.elements["rds-mode"].value;
+    return {
+      mode,
+      text: mode === "none" ? "" : this.elements["rds-text"].value,
+    };
+  }
+
+  setCarrierLimits({ min, max }, preferredValue) {
+    const carrier = this.elements.carrier;
+    carrier.min = String(min);
+    carrier.max = String(max);
+    const requested = preferredValue ?? Number(carrier.value);
+    carrier.value = String(Math.max(min, Math.min(max, requested)));
+  }
+
+  configureRds(mode, text) {
+    const enabled = mode !== "none";
+    const isPs = mode === "ps";
+    const input = this.elements["rds-text"];
+
+    this.elements["rds-input-wrap"].hidden = !enabled;
+    this.elements["rds-input-label"].textContent = isPs
+      ? "Programme Service"
+      : "RadioText";
+    input.maxLength = isPs ? 8 : 64;
+    input.placeholder = isPs ? "8 characters" : "Up to 64 characters";
+    input.value = text.slice(0, input.maxLength);
+    this.updateRdsCounter();
+  }
+
+  updateRdsCounter() {
+    const input = this.elements["rds-text"];
+    this.elements["rds-counter"].textContent = `${input.value.length}/${input.maxLength}`;
+  }
+
+  renderControls({
+    warning,
+    sourceReady,
+    fmReady,
+    stale,
+    busy,
+    operation,
+    occupiedBandwidth,
+  }) {
     const { carrier, deviation } = this.getParameters();
     const formatKhz = (value) => `${(value / 1000).toFixed(1)} kHz`;
 
@@ -98,6 +161,9 @@ export class AppUI {
     this.elements["frequency-range"].textContent = `${((carrier - deviation) / 1000).toFixed(
       1,
     )}–${((carrier + deviation) / 1000).toFixed(1)} kHz`;
+    this.elements["occupied-bandwidth"].textContent = `≈${(
+      occupiedBandwidth / 1000
+    ).toFixed(1)} kHz`;
 
     this.elements["parameter-warning"].hidden = !warning;
     this.elements["parameter-warning"].textContent = warning || "";
@@ -108,6 +174,8 @@ export class AppUI {
       busy && operation === "encode" ? "Encoding…" : "Encode message";
     this.elements["decode-button"].textContent =
       busy && operation === "decode" ? "Decoding…" : "Decode signal";
+    this.elements["rds-mode"].disabled = busy;
+    this.elements["rds-text"].disabled = busy;
 
     for (const button of this.elements["example-list"].querySelectorAll("button")) {
       button.disabled = busy;
@@ -160,10 +228,21 @@ export class AppUI {
     this.elements["fm-origin"].hidden = true;
   }
 
-  async showResult({ blob, meta }) {
+  async showResult({ blob, meta, rds, rdsExpected }) {
     this.elements["result-empty"].hidden = true;
     this.elements["result-loaded"].hidden = false;
     this.elements["result-meta"].textContent = meta;
+    this.elements["result-rds"].hidden = !rdsExpected;
+    if (rdsExpected) {
+      this.elements["result-rds"].classList.toggle("is-missing", !rds);
+      this.elements["result-rds-mode"].textContent =
+        rds?.mode === "ps" ? "PS" : "RadioText";
+      this.elements["result-rds-text"].textContent =
+        rds?.text || "No valid RDS groups recovered";
+      this.elements["result-rds-meta"].textContent = rds
+        ? `Recovered after ${rds.completedAt.toFixed(1)} s · ${rds.validGroups} valid groups`
+        : "Check the selected mode, carrier, and deviation";
+    }
     await this.players.result.load(blob);
   }
 
@@ -171,6 +250,7 @@ export class AppUI {
     this.players.result.stop();
     this.elements["result-empty"].hidden = false;
     this.elements["result-loaded"].hidden = true;
+    this.elements["result-rds"].hidden = true;
   }
 
   setRecording(active, elapsedSeconds = 0) {
@@ -277,6 +357,13 @@ export class AppUI {
 
     this.elements.carrier.addEventListener("input", () => this.handlers.onParametersChanged());
     this.elements.deviation.addEventListener("input", () => this.handlers.onParametersChanged());
+    this.elements["rds-mode"].addEventListener("change", () =>
+      this.handlers.onRdsModeChanged(this.elements["rds-mode"].value),
+    );
+    this.elements["rds-text"].addEventListener("input", () => {
+      this.updateRdsCounter();
+      this.handlers.onRdsTextChanged(this.elements["rds-text"].value);
+    });
     this.elements["encode-button"].addEventListener("click", () => this.handlers.onEncode());
     this.elements["decode-button"].addEventListener("click", () => this.handlers.onDecode());
     this.elements["fm-file-button"].addEventListener("click", () => this.chooseFile(fmFile));

@@ -20,6 +20,28 @@ export function demodulateFM(
   deviation,
   messageBandwidth = DEFAULT_MESSAGE_BANDWIDTH,
 ) {
+  const composite = demodulateFMComposite(
+    signal,
+    sampleRate,
+    carrier,
+    deviation,
+    messageBandwidth,
+  );
+  return normalize(lowpass(composite, sampleRate, messageBandwidth, 2), 0.92);
+}
+
+/**
+ * Recover the complete signal that originally modulated the FM carrier.
+ * Keeping this stage separate lets an RDS receiver inspect the wide multiplex
+ * before the audible programme is extracted from it.
+ */
+export function demodulateFMComposite(
+  signal,
+  sampleRate,
+  carrier,
+  deviation,
+  basebandBandwidth,
+) {
   if (!(signal instanceof Float32Array)) {
     throw new TypeError("The FM signal must be a Float32Array.");
   }
@@ -28,8 +50,8 @@ export function demodulateFM(
   }
 
   const basebandCutoff = Math.min(
-    (deviation + messageBandwidth) * 1.15,
-    carrier * 0.8,
+    (deviation + basebandBandwidth) * 1.15,
+    carrier * 0.9,
     sampleRate * 0.4,
   );
   const iFilters = [
@@ -72,13 +94,12 @@ export function demodulateFM(
     previousQ = q;
   }
 
-  const filtered = lowpass(recovered, sampleRate, messageBandwidth, 2);
-  const withoutDc = removeDc(filtered);
+  const withoutDc = removeDc(recovered);
   const transientLength = Math.min(Math.floor(sampleRate * 0.012), withoutDc.length);
   for (let index = 0; index < transientLength; index += 1) {
     withoutDc[index] *= index / Math.max(1, transientLength - 1);
   }
-  return normalize(withoutDc, 0.92);
+  return withoutDc;
 }
 
 export { DEFAULT_MESSAGE_BANDWIDTH };

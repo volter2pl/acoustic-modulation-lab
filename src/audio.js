@@ -1,4 +1,4 @@
-import { fadeEdges, lowpass, normalize, removeDc } from "./filters.js";
+import { butterworthLowpass, fadeEdges, normalize, removeDc } from "./filters.js";
 import { DEFAULT_MESSAGE_BANDWIDTH } from "./fm-demodulator.js";
 
 export const TARGET_SAMPLE_RATE = 48000;
@@ -36,12 +36,21 @@ export function mixToMono(audioBuffer) {
   return mono;
 }
 
-export function prepareMessage(audioBuffer, bandwidth = DEFAULT_MESSAGE_BANDWIDTH) {
+export function prepareMessage(
+  audioBuffer,
+  bandwidth = DEFAULT_MESSAGE_BANDWIDTH,
+  filterOrder = 4,
+) {
   // A wideband message creates wide FM sidebands. Limiting the message to the
   // speech band keeps the occupied FM spectrum inside a 48 kHz audio channel.
   const mono = mixToMono(audioBuffer);
   const centered = removeDc(mono);
-  const filtered = lowpass(centered, audioBuffer.sampleRate, bandwidth, 2);
+  const filtered = butterworthLowpass(
+    centered,
+    audioBuffer.sampleRate,
+    bandwidth,
+    filterOrder,
+  );
   const normalized = normalize(filtered, 0.95);
   return fadeEdges(normalized, audioBuffer.sampleRate);
 }

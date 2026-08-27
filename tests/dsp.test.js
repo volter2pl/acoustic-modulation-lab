@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { demodulateFM } from "../src/fm-demodulator.js";
+import { demodulateFM, demodulateFMComposite } from "../src/fm-demodulator.js";
 import { AUDIO_EXAMPLES } from "../src/examples.js";
 import { modulateFM } from "../src/fm-modulator.js";
+import {
+  createRdsComposite,
+  decodeRdsComposite,
+  RDS_BASEBAND_BANDWIDTH,
+  RDS_MODES,
+  RDS_PILOT,
+  recoverAudioFromRdsComposite,
+} from "../src/rds.js";
 import { encodeWav } from "../src/wav.js";
-import { WaveformPlayer } from "../src/waveform.js";
+import { SpectrumPlayer } from "../src/spectrum.js";
 
 function correlation(first, second, offset = 0, lag = 0) {
   const length = Math.min(first.length, second.length) - offset - Math.abs(lag);
@@ -33,6 +41,29 @@ function correlation(first, second, offset = 0, lag = 0) {
   return numerator / Math.sqrt(denominatorA * denominatorB);
 }
 
+function toneAmplitude(signal, sampleRate, frequency, startSeconds, endSeconds) {
+  const start = Math.floor(startSeconds * sampleRate);
+  const end = Math.min(signal.length, Math.floor(endSeconds * sampleRate));
+  let sine = 0;
+  let cosine = 0;
+  for (let index = start; index < end; index += 1) {
+    const phase = (2 * Math.PI * frequency * index) / sampleRate;
+    sine += signal[index] * Math.sin(phase);
+    cosine += signal[index] * Math.cos(phase);
+  }
+  return (2 * Math.hypot(sine, cosine)) / Math.max(1, end - start);
+}
+
+function peakBetween(signal, sampleRate, startSeconds, endSeconds) {
+  const start = Math.floor(startSeconds * sampleRate);
+  const end = Math.min(signal.length, Math.floor(endSeconds * sampleRate));
+  let peak = 0;
+  for (let index = start; index < end; index += 1) {
+    peak = Math.max(peak, Math.abs(signal[index]));
+  }
+  return peak;
+}
+
 test("the modulator and demodulator recover a sinusoidal message", () => {
   const sampleRate = 48000;
   const duration = 1;
@@ -57,6 +88,97 @@ test("the modulator keeps its output amplitude bounded", () => {
   assert.ok(encoded.every((sample) => Math.abs(sample) <= 0.720001));
 });
 
+test("scaled RDS recovers an eight-character Programme Service name", () => {
+  const sampleRate = 48000;
+  const composite = createRdsComposite(new Float32Array(sampleRate), sampleRate, {
+    mode: RDS_MODES.PS,
+    text: "ACOUSTIC",
+  });
+  const decoded = decodeRdsComposite(composite, sampleRate, RDS_MODES.PS);
+
+  assert.equal(decoded?.text, "ACOUSTIC");
+  assert.ok(decoded.validGroups >= 4);
+});
+
+test("scaled RDS recovers RadioText", () => {
+  const sampleRate = 48000;
+  const composite = createRdsComposite(new Float32Array(sampleRate), sampleRate, {
+    mode: RDS_MODES.RADIOTEXT,
+    text: "FM carries audio and data together.",
+  });
+  const decoded = decodeRdsComposite(composite, sampleRate, RDS_MODES.RADIOTEXT);
+
+  assert.equal(decoded?.text, "FM carries audio and data together.");
+});
+
+test("scaled RDS survives the complete FM transmitter and receiver", () => {
+  const sampleRate = 48000;
+  const composite = createRdsComposite(new Float32Array(sampleRate), sampleRate, {
+    mode: RDS_MODES.PS,
+    text: "ACOUSTIC",
+  });
+  const fm = modulateFM(composite, sampleRate, 12000, 1000);
+  const receivedComposite = demodulateFMComposite(
+    fm,
+    sampleRate,
+    12000,
+    1000,
+    RDS_BASEBAND_BANDWIDTH,
+  );
+  const decoded = decodeRdsComposite(receivedComposite, sampleRate, RDS_MODES.PS);
+
+  assert.equal(decoded?.text, "ACOUSTIC");
+});
+
+test("the RDS receiver separates programme audio from pilot and data", () => {
+  const sampleRate = 48000;
+  const message = new Float32Array(sampleRate * 3);
+  for (let index = 0; index < message.length; index += 1) {
+    message[index] = 0.6 * Math.sin((2 * Math.PI * 440 * index) / sampleRate);
+  }
+  const transmittedComposite = createRdsComposite(message, sampleRate, {
+    mode: RDS_MODES.PS,
+    text: "ACOUSTIC",
+  });
+  const fm = modulateFM(transmittedComposite, sampleRate, 12000, 1000);
+  const receivedComposite = demodulateFMComposite(
+    fm,
+    sampleRate,
+    12000,
+    1000,
+    RDS_BASEBAND_BANDWIDTH,
+  );
+  const audio = recoverAudioFromRdsComposite(receivedComposite, sampleRate);
+  const programmeLevel = toneAmplitude(audio, sampleRate, 440, 0.2, 2.8);
+  const pilotLeakage = toneAmplitude(audio, sampleRate, RDS_PILOT, 0.2, 2.8);
+
+  assert.ok(programmeLevel > 0.59 && programmeLevel < 0.61);
+  assert.ok(
+    pilotLeakage < programmeLevel * 0.00001,
+    `pilot leakage ${pilotLeakage} is too high for programme level ${programmeLevel}`,
+  );
+});
+
+test("silent RDS transmission remains silent after programme extraction", () => {
+  const sampleRate = 48000;
+  const transmittedComposite = createRdsComposite(
+    new Float32Array(sampleRate * 3),
+    sampleRate,
+    { mode: RDS_MODES.PS, text: "ACOUSTIC" },
+  );
+  const fm = modulateFM(transmittedComposite, sampleRate, 12000, 1000);
+  const receivedComposite = demodulateFMComposite(
+    fm,
+    sampleRate,
+    12000,
+    1000,
+    RDS_BASEBAND_BANDWIDTH,
+  );
+  const audio = recoverAudioFromRdsComposite(receivedComposite, sampleRate);
+
+  assert.ok(peakBetween(audio, sampleRate, 0.2, 2.8) < 0.00001);
+});
+
 test("the WAV encoder creates a valid mono 16-bit PCM header", () => {
   const wav = encodeWav(Float32Array.from([0, 1, -1]), 48000);
   const view = new DataView(wav);
@@ -79,10 +201,11 @@ test("the sample manifest has unique IDs and references existing files", async (
   await Promise.all(AUDIO_EXAMPLES.map((example) => access(new URL(example.src))));
 });
 
-test("reloading a waveform preserves the new audio source", async () => {
+test("reloading a spectrum preserves the new audio source", async () => {
   const originalAudio = globalThis.Audio;
   const originalWindow = globalThis.window;
-  const createdSources = [];
+  const createdMedia = [];
+  const decodedBlobs = [];
 
   class FakeAudio {
     constructor() {
@@ -94,18 +217,26 @@ test("reloading a waveform preserves the new audio source", async () => {
     }
 
     addEventListener() {}
-    load() {}
     pause() {}
   }
 
   globalThis.Audio = FakeAudio;
   globalThis.window = {
     WaveSurfer: {
+      Spectrogram: {
+        create() {
+          return {};
+        },
+      },
       create(options) {
-        createdSources.push(options.media.src);
+        createdMedia.push(options.media);
         return {
           destroy() {
             options.media.src = "";
+          },
+          async loadBlob(blob) {
+            decodedBlobs.push(blob);
+            options.media.src = `blob:test-${decodedBlobs.length}`;
           },
         };
       },
@@ -113,29 +244,50 @@ test("reloading a waveform preserves the new audio source", async () => {
   };
 
   try {
-    const player = new WaveformPlayer({
-      container: { replaceChildren() {}, innerHTML: "" },
+    const player = new SpectrumPlayer({
+      container: {
+        replaceChildren() {},
+        addEventListener() {},
+        innerHTML: "",
+        clientHeight: 190,
+      },
+      engineContainer: { replaceChildren() {} },
+      playhead: { style: {} },
       playButton: { addEventListener() {}, setAttribute() {}, textContent: "" },
       timeElement: { textContent: "" },
-      waveColor: "#000",
-      progressColor: "#fff",
+      accentColor: [169, 157, 255],
+      frequencyMax: 8000,
+      height: 190,
     });
 
     await player.load(new Blob(["first"]));
     await player.load(new Blob(["second"]));
 
-    assert.equal(createdSources.length, 2);
-    assert.ok(createdSources.every(Boolean));
-    assert.equal(player.audio.src, createdSources[1]);
+    assert.equal(createdMedia.length, 2);
+    assert.notEqual(createdMedia[0], createdMedia[1]);
+    assert.equal(decodedBlobs.length, 2);
+    assert.equal(player.audio, createdMedia[1]);
+    assert.equal(player.audio.src, "blob:test-2");
   } finally {
     globalThis.Audio = originalAudio;
     globalThis.window = originalWindow;
   }
 });
 
+test("the interface uses spectrograms instead of amplitude waveforms", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+
+  assert.match(html, /plugins\/spectrogram\.min\.js/);
+  assert.match(html, /id="source-spectrum"/);
+  assert.match(html, /id="fm-spectrum"/);
+  assert.match(html, /id="result-spectrum"/);
+  assert.doesNotMatch(html, /id="[^"]*waveform/);
+});
+
 test("DSP modules stay independent from browser UI APIs", async () => {
   const { readFile } = await import("node:fs/promises");
-  const dspFiles = ["filters.js", "fm-modulator.js", "fm-demodulator.js", "wav.js"];
+  const dspFiles = ["filters.js", "fm-modulator.js", "fm-demodulator.js", "rds.js", "wav.js"];
 
   for (const file of dspFiles) {
     const source = await readFile(new URL(`../src/${file}`, import.meta.url), "utf8");
@@ -157,9 +309,10 @@ test("source code and interface copy are English", async () => {
     "fm-modulator.js",
     "main.js",
     "recorder.js",
+    "rds.js",
     "ui.js",
     "wav.js",
-    "waveform.js",
+    "spectrum.js",
   ];
   const contents = await Promise.all(
     sourceFiles.map((file) => readFile(new URL(`../src/${file}`, import.meta.url), "utf8")),
