@@ -6,10 +6,22 @@ export const DEFAULT_AUDIO_BANDWIDTH = 2400;
 
 let sharedAudioContext;
 
+function createAudioError(code, message, details = {}) {
+  const error = new Error(message);
+  error.code = code;
+  error.details = details;
+  return error;
+}
+
 export function getAudioContext() {
   if (!sharedAudioContext) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) throw new Error("This browser does not support the Web Audio API.");
+    if (!AudioContextClass) {
+      throw createAudioError(
+        "errors.webAudioUnsupported",
+        "This browser does not support the Web Audio API.",
+      );
+    }
     sharedAudioContext = new AudioContextClass({ sampleRate: TARGET_SAMPLE_RATE });
   }
   return sharedAudioContext;
@@ -20,7 +32,11 @@ export async function decodeAudioBlob(blob) {
   const arrayBuffer = await blob.arrayBuffer();
   const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0));
   if (audioBuffer.duration > MAX_DURATION_SECONDS) {
-    throw new Error(`The maximum recording length is ${MAX_DURATION_SECONDS} seconds.`);
+    throw createAudioError(
+      "errors.maxDuration",
+      `The maximum recording length is ${MAX_DURATION_SECONDS} seconds.`,
+      { seconds: MAX_DURATION_SECONDS },
+    );
   }
   return audioBuffer;
 }
@@ -64,8 +80,11 @@ export function formatDuration(seconds) {
   return `${minutes}:${remainder}`;
 }
 
-export function describeAudio(audioBuffer) {
+export function describeAudio(audioBuffer, translate = null) {
+  const channelDescription = audioBuffer.numberOfChannels === 1
+    ? translate?.("audio.mono") ?? "mono"
+    : translate?.("audio.stereoToMono") ?? "stereo → mono";
   return `${formatDuration(audioBuffer.duration)} · ${(audioBuffer.sampleRate / 1000).toFixed(0)} kHz · ${
-    audioBuffer.numberOfChannels === 1 ? "mono" : "stereo → mono"
+    channelDescription
   }`;
 }

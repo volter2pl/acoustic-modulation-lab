@@ -21,17 +21,25 @@
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="./" aria-label="Acoustic Modulation Lab — home">
+      <a class="brand" href="./" aria-label="Acoustic Modulation Lab — home" data-i18n-aria-label="aria.home" data-home-link>
         <span class="brand-mark" aria-hidden="true">AM/FM</span>
-        <span>Acoustic Modulation Lab</span>
+        <span data-i18n="meta.title">Acoustic Modulation Lab</span>
       </a>
-      <a
-        class="github-link"
-        href="https://github.com/volter2pl/acoustic-modulation-lab"
-        target="_blank"
-        rel="noreferrer"
-        aria-label="View Acoustic Modulation Lab on GitHub"
-      >GitHub ↗</a>
+      <div class="header-links">
+        <nav class="language-switch" aria-label="Interface language" data-i18n-aria-label="aria.language">
+          <a href="./" data-language="en">EN</a>
+          <span aria-hidden="true">/</span>
+          <a href="?lang=pl" data-language="pl">PL</a>
+        </nav>
+        <a
+          class="github-link"
+          href="https://github.com/volter2pl/acoustic-modulation-lab"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="View Acoustic Modulation Lab on GitHub"
+          data-i18n-aria-label="aria.github"
+        >GitHub ↗</a>
+      </div>
     </header>
 
     <main>
@@ -39,30 +47,30 @@
 
       <div class="mode-switches">
         <div class="switch-group">
-          <span class="switch-label">Modulation</span>
-          <div class="experiment-switch" role="group" aria-label="Modulation type">
+          <span class="switch-label" data-i18n="ui.modulation">Modulation</span>
+          <div class="experiment-switch" role="group" aria-label="Modulation type" data-i18n-aria-label="aria.modulationType">
             <button id="modulation-fm" class="is-active" type="button" aria-pressed="true">FM</button>
             <button id="modulation-am" type="button" aria-pressed="false">AM</button>
           </div>
         </div>
         <div class="switch-group">
-          <span class="switch-label">Experiment</span>
-          <div class="experiment-switch" role="group" aria-label="Experiment mode">
+          <span class="switch-label" data-i18n="ui.experiment">Experiment</span>
+          <div class="experiment-switch" role="group" aria-label="Experiment mode" data-i18n-aria-label="aria.experimentMode">
             <button id="mode-single" class="is-active" type="button" aria-pressed="true">
-              Single station
+              <span data-i18n="ui.singleStation">Single station</span>
             </button>
-            <button id="mode-band" type="button" aria-pressed="false">Radio band</button>
+            <button id="mode-band" type="button" aria-pressed="false" data-i18n="ui.radioBand">Radio band</button>
           </div>
         </div>
       </div>
 
-      <section class="signal-flow" aria-label="Acoustic modulation and demodulation">
+      <section class="signal-flow" aria-label="Acoustic modulation and demodulation" data-i18n-aria-label="aria.signalFlow">
         <article class="stage-card" id="source-card">
           <header class="stage-header">
             <span class="step-number">1</span>
             <div>
-              <p class="eyebrow">INPUT</p>
-              <h1 id="source-title">Message</h1>
+              <p class="eyebrow" data-i18n="ui.input">INPUT</p>
+              <h1 id="source-title" data-i18n="ui.message">Message</h1>
             </div>
           </header>
 
@@ -70,24 +78,24 @@
           <div id="source-chooser">
             <div id="source-dropzone" class="dropzone" tabindex="0" role="button">
               <div class="drop-icon" aria-hidden="true">＋</div>
-              <strong>Drop an audio file</strong>
+              <strong data-i18n="ui.dropAudio">Drop an audio file</strong>
               <span>WAV, MP3, M4A, OGG</span>
               <div class="source-actions">
                 <button id="source-file-button" class="button button-secondary" type="button">
-                  Choose file
+                  <span data-i18n="ui.chooseFile">Choose file</span>
                 </button>
                 <button id="record-button" class="button button-secondary record-button" type="button">
                   <span class="record-dot" aria-hidden="true"></span>
-                  <span id="record-label">Record voice</span>
+                  <span id="record-label" data-i18n="ui.recordVoice">Record voice</span>
                 </button>
               </div>
             </div>
             <input id="source-file" type="file" accept="audio/*" hidden />
             <div class="example-section">
-              <div class="or-divider example-divider"><span>sample recordings</span></div>
-              <div id="example-list" class="example-list" aria-label="Sample recordings"></div>
+              <div class="or-divider example-divider"><span data-i18n="ui.sampleRecordings">sample recordings</span></div>
+              <div id="example-list" class="example-list" aria-label="Sample recordings" data-i18n-aria-label="aria.sampleRecordings"></div>
               <button id="source-chooser-cancel" class="text-button chooser-cancel" type="button" hidden>
-                Back to current recording
+                <span data-i18n="ui.backToRecording">Back to current recording</span>
               </button>
             </div>
           </div>
@@ -95,14 +103,14 @@
           <div id="source-loaded" class="loaded-content" hidden>
             <div class="file-row">
               <div class="file-copy">
-                <strong id="source-name">Recording</strong>
+                <strong id="source-name" data-i18n="ui.recording">Recording</strong>
                 <span id="source-meta">—</span>
               </div>
               <div class="file-row-actions">
                 <button id="source-record-again" class="text-button record-again" type="button">
-                  <span aria-hidden="true">●</span> Record
+                  <span aria-hidden="true">●</span> <span data-i18n="ui.record">Record</span>
                 </button>
-                <button id="source-replace" class="text-button" type="button">Change source</button>
+                <button id="source-replace" class="text-button" type="button" data-i18n="ui.changeSource">Change source</button>
               </div>
             </div>
 
@@ -112,7 +120,7 @@
               <div id="source-spectrum-engine" class="spectrum-engine"></div>
             </div>
             <div class="player-row">
-              <button id="source-play" class="play-button" type="button" aria-label="Play message">▶</button>
+              <button id="source-play" class="play-button" type="button" aria-label="Play message" data-i18n-aria-label="aria.playMessage">▶</button>
               <span id="source-time" class="timecode">0:00 / 0:00</span>
             </div>
           </div>
@@ -120,7 +128,7 @@
 
           <div id="band-source" hidden>
             <div id="band-station-list" class="band-station-list"></div>
-            <p class="band-note">Shorter programmes continue as silent carriers.</p>
+            <p class="band-note" data-i18n="ui.shorterPrograms">Shorter programmes continue as silent carriers.</p>
           </div>
         </article>
 
@@ -132,7 +140,7 @@
           <header class="stage-header">
             <span class="step-number">2</span>
             <div>
-              <p class="eyebrow">MODULATION</p>
+              <p class="eyebrow" data-i18n="ui.modulationStage">MODULATION</p>
               <h2 id="signal-title">FM signal</h2>
             </div>
             <span id="signal-origin" class="state-badge" hidden></span>
@@ -140,38 +148,38 @@
 
           <div id="single-controls" class="parameter-block">
             <label class="parameter-label" for="carrier">
-              <span>Carrier</span>
+              <span data-i18n="ui.carrier">Carrier</span>
               <output id="carrier-value">18.0 kHz</output>
             </label>
             <input id="carrier" type="range" min="5000" max="20000" step="100" value="18000" />
 
             <div id="fm-parameters">
               <label class="parameter-label" for="deviation">
-                <span>Deviation</span>
+                <span data-i18n="ui.deviation">Deviation</span>
                 <output id="deviation-value">±1.0 kHz</output>
               </label>
               <input id="deviation" type="range" min="250" max="2500" step="250" value="1000" />
 
               <div class="frequency-range">
-                <span>Instantaneous range</span>
+                <span data-i18n="ui.instantaneousRange">Instantaneous range</span>
                 <strong id="frequency-range">17.0–19.0 kHz</strong>
               </div>
             </div>
 
             <div id="am-parameters" hidden>
               <label class="parameter-label" for="modulation-depth">
-                <span>Modulation depth</span>
+                <span data-i18n="ui.modulationDepth">Modulation depth</span>
                 <output id="modulation-depth-value">80%</output>
               </label>
               <input id="modulation-depth" type="range" min="0" max="150" step="10" value="80" />
               <div class="frequency-range">
-                <span>Envelope</span>
-                <strong id="modulation-depth-state">Valid</strong>
+                <span data-i18n="ui.envelope">Envelope</span>
+                <strong id="modulation-depth-state" data-i18n="ui.valid">Valid</strong>
               </div>
             </div>
 
             <div class="frequency-range occupied-summary">
-              <span>Occupied bandwidth</span>
+              <span data-i18n="ui.occupiedBandwidth">Occupied bandwidth</span>
               <strong id="occupied-bandwidth">≈6.8 kHz</strong>
             </div>
 
@@ -179,10 +187,10 @@
               <div class="rds-control">
                 <label for="rds-mode">
                   <span>RDS</span>
-                  <small>scaled 1:8</small>
+                  <small data-i18n="ui.scaledRds">scaled 1:8</small>
                 </label>
                 <select id="rds-mode">
-                  <option value="none">None</option>
+                  <option value="none" data-i18n="ui.none">None</option>
                   <option value="ps">PS</option>
                   <option value="radiotext">RadioText</option>
                 </select>
@@ -190,7 +198,7 @@
 
               <div id="rds-input-wrap" class="rds-input" hidden>
                 <label for="rds-text">
-                  <span id="rds-input-label">Programme Service</span>
+                  <span id="rds-input-label" data-i18n="ui.programmeService">Programme Service</span>
                   <small id="rds-counter">0/8</small>
                 </label>
                 <input id="rds-text" type="text" maxlength="8" autocomplete="off" />
@@ -201,16 +209,16 @@
 
           <div id="band-controls" class="parameter-block band-controls" hidden>
             <div class="band-plan-row">
-              <span>Stations</span>
-              <strong>5.0 · 12.0 · 19.0 kHz</strong>
+              <span data-i18n="ui.bandStations">Stations</span>
+              <strong data-i18n="ui.stationPlan">5.0 · 12.0 · 19.0 kHz</strong>
             </div>
             <div class="band-plan-row">
               <span id="band-parameter-label">Deviation</span>
               <strong id="band-parameter-value">±0.75 kHz</strong>
             </div>
             <div class="band-plan-row">
-              <span>Programme band</span>
-              <strong>2.0 kHz each</strong>
+              <span data-i18n="ui.programmeBand">Programme band</span>
+              <strong data-i18n="ui.programmeBandValue">2.0 kHz each</strong>
             </div>
             <div class="band-plan-row">
               <span id="band-feature-label">RDS</span>
@@ -219,10 +227,10 @@
           </div>
 
           <button id="encode-button" class="button button-primary button-wide" type="button" disabled>
-            Encode message
+            <span data-i18n="ui.encodeMessage">Encode message</span>
           </button>
 
-          <div class="or-divider"><span>or</span></div>
+          <div class="or-divider"><span data-i18n="ui.or">or</span></div>
           <button id="signal-file-button" class="button button-quiet button-wide" type="button">
             Load your own FM signal
           </button>
@@ -234,7 +242,7 @@
                 <strong id="signal-name">FM signal</strong>
                 <span id="signal-meta">—</span>
               </div>
-              <span id="signal-stale" class="stale-label" hidden>Settings changed</span>
+              <span id="signal-stale" class="stale-label" hidden data-i18n="ui.settingsChanged">Settings changed</span>
             </div>
             <div class="spectrum-shell signal-spectrum">
               <div id="signal-spectrum" class="spectrum"></div>
@@ -242,12 +250,12 @@
               <div id="signal-spectrum-engine" class="spectrum-engine"></div>
             </div>
             <div class="player-row">
-              <button id="signal-play" class="play-button" type="button" aria-label="Play modulated signal">▶</button>
+              <button id="signal-play" class="play-button" type="button" aria-label="Play modulated signal" data-i18n-aria-label="aria.playSignal">▶</button>
               <span id="signal-time" class="timecode">0:00 / 0:00</span>
-              <button id="signal-download" class="download-button" type="button">Download WAV</button>
+              <button id="signal-download" class="download-button" type="button" data-i18n="ui.downloadWav">Download WAV</button>
             </div>
             <button id="decode-button" class="button button-accent button-wide" type="button">
-              Decode signal
+              <span data-i18n="ui.decodeSignal">Decode signal</span>
             </button>
           </div>
         </article>
@@ -260,14 +268,14 @@
           <header class="stage-header">
             <span class="step-number">3</span>
             <div>
-              <p class="eyebrow">DEMODULATION</p>
+              <p class="eyebrow" data-i18n="ui.demodulation">DEMODULATION</p>
               <h2 id="result-title">Recovered audio</h2>
             </div>
           </header>
 
           <div id="receiver-controls" class="receiver-controls" hidden>
             <label class="parameter-label" for="receiver-carrier">
-              <span>Receiver tuning</span>
+              <span data-i18n="ui.receiverTuning">Receiver tuning</span>
               <output id="receiver-carrier-value">12.0 kHz</output>
             </label>
             <input
@@ -278,31 +286,31 @@
               step="100"
               value="12000"
             />
-            <div class="tuner-presets" aria-label="Station presets">
+            <div class="tuner-presets" aria-label="Station presets" data-i18n-aria-label="aria.stationPresets">
               <button type="button" data-carrier="5000">5.0</button>
               <button type="button" data-carrier="12000" class="is-active">12.0</button>
               <button type="button" data-carrier="19000">19.0 kHz</button>
             </div>
             <button id="tune-button" class="button button-accent button-wide" type="button" disabled>
-              Update spectrum &amp; WAV
+              <span data-i18n="ui.updateSpectrum">Update spectrum &amp; WAV</span>
             </button>
           </div>
 
           <div id="result-empty" class="result-empty">
             <div class="result-placeholder" aria-hidden="true">≈</div>
-            <strong id="result-empty-title">Your result will appear here</strong>
+            <strong id="result-empty-title" data-i18n="ui.resultHere">Your result will appear here</strong>
             <span id="result-empty-copy">Prepare an FM signal first</span>
           </div>
 
           <div id="result-loaded" class="loaded-content result-loaded" hidden>
             <div class="file-row">
               <div class="file-copy">
-                <strong id="result-name">Recovered message</strong>
+                <strong id="result-name" data-i18n="ui.recoveredMessage">Recovered message</strong>
                 <span id="result-meta">—</span>
               </div>
               <div class="result-state-labels">
                 <span id="result-spectrum-state" class="snapshot-label" hidden></span>
-                <span id="result-ready-state" class="state-badge success-badge">Ready</span>
+                <span id="result-ready-state" class="state-badge success-badge" data-i18n="ui.ready">Ready</span>
               </div>
             </div>
             <div id="result-rds" class="rds-result" hidden>
@@ -318,9 +326,9 @@
               <div id="result-spectrum-engine" class="spectrum-engine"></div>
             </div>
             <div class="player-row">
-              <button id="result-play" class="play-button" type="button" aria-label="Play recovered audio">▶</button>
+              <button id="result-play" class="play-button" type="button" aria-label="Play recovered audio" data-i18n-aria-label="aria.playResult">▶</button>
               <span id="result-time" class="timecode">0:00 / 0:00</span>
-              <button id="result-download" class="download-button" type="button">Download WAV</button>
+              <button id="result-download" class="download-button" type="button" data-i18n="ui.downloadWav">Download WAV</button>
             </div>
           </div>
         </article>

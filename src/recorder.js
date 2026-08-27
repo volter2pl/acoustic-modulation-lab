@@ -19,7 +19,9 @@ export class MicrophoneRecorder {
 
   async start({ onProgress, onComplete }) {
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-      throw new Error("This browser does not support microphone recording.");
+      const error = new Error("This browser does not support microphone recording.");
+      error.code = "errors.recordingUnsupported";
+      throw error;
     }
 
     this.stream = await navigator.mediaDevices.getUserMedia({

@@ -1,6 +1,8 @@
 # Frequency modulation and RDS
 
-[Back to the laboratory overview](../README.md)
+**Language:** English | [Polski](../pl/fm.md)
+
+[Back to the laboratory overview](../../README.md)
 
 Frequency modulation stores a message in the instantaneous frequency of a
 constant-amplitude carrier. Unlike AM, the carrier envelope does not directly

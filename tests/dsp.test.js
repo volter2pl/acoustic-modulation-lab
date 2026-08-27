@@ -33,6 +33,11 @@ import {
 import { encodeWav } from "../src/wav.js";
 import { SpectrumPlayer } from "../src/spectrum.js";
 import { StreamingFmReceiver } from "../src/modulation/fm/streaming-receiver.js";
+import {
+  createI18n,
+  getLanguage,
+  TRANSLATIONS,
+} from "../src/i18n.js";
 
 function correlation(first, second, offset = 0, lag = 0) {
   const length = Math.min(first.length, second.length) - offset - Math.abs(lag);
@@ -636,7 +641,7 @@ test("DSP modules stay independent from browser UI APIs", async () => {
   }
 });
 
-test("source code and interface copy are English", async () => {
+test("English remains the default interface and translations stay isolated", async () => {
   const { readFile } = await import("node:fs/promises");
   const interfaceHtml = await readFile(new URL("../index.html", import.meta.url), "utf8");
   assert.match(interfaceHtml, /<html lang="en">/);
@@ -674,17 +679,74 @@ test("source code and interface copy are English", async () => {
   assert.doesNotMatch(`${interfaceHtml}\n${contents.join("\n")}`, polishDiacritics);
 });
 
+test("the lang query selects the complete Polish interface", async () => {
+  assert.equal(getLanguage("?lang=pl"), "pl");
+  assert.equal(getLanguage("?mode=band&lang=pl"), "pl");
+  assert.equal(getLanguage("?lang=en"), "en");
+  assert.equal(getLanguage("?lang=de"), "en");
+  assert.equal(getLanguage(""), "en");
+
+  assert.deepEqual(
+    Object.keys(TRANSLATIONS.pl).sort(),
+    Object.keys(TRANSLATIONS.en).sort(),
+  );
+  const polish = createI18n("pl");
+  assert.equal(polish.t("ui.singleStation"), "Jedna stacja");
+  assert.equal(
+    polish.t("ui.prepareSignal", { modulation: "FM" }),
+    "Najpierw przygotuj sygnał FM",
+  );
+  assert.equal(polish.number(12), "12,0");
+
+  const { readFile } = await import("node:fs/promises");
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /href="\?lang=pl" data-language="pl"/);
+  assert.match(html, /data-home-link/);
+  assert.match(html, /data-i18n="ui\.singleStation"/);
+  assert.match(html, /data-i18n-aria-label="aria\.signalFlow"/);
+});
+
 test("educational documentation covers AM and FM as separate concepts", async () => {
   const { readFile } = await import("node:fs/promises");
-  const [overview, amGuide, fmGuide] = await Promise.all([
+  const [overview, polishOverview, amGuide, fmGuide, polishAmGuide, polishFmGuide] = await Promise.all([
     readFile(new URL("../README.md", import.meta.url), "utf8"),
-    readFile(new URL("../docs/am.md", import.meta.url), "utf8"),
-    readFile(new URL("../docs/fm.md", import.meta.url), "utf8"),
+    readFile(new URL("../README.pl.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/en/am.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/en/fm.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/pl/am.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/pl/fm.md", import.meta.url), "utf8"),
   ]);
   assert.match(overview, /Acoustic Modulation Lab/);
+  assert.match(overview, /\[Polski\]\(README\.pl\.md\)/);
   assert.match(overview, /volter2pl\.github\.io\/acoustic-modulation-lab/);
+  assert.match(polishOverview, /\[English\]\(README\.md\)/);
+  assert.match(polishOverview, /Co pokazuje laboratorium/);
+  assert.match(polishOverview, /acoustic-modulation-lab\/\?lang=pl/);
   assert.match(amGuide, /s\(t\) = A · \[1 \+ μm\(t\)\]/);
   assert.match(amGuide, /Overmodulation/);
   assert.match(fmGuide, /fi\(t\) = fc \+ Δf · m\(t\)/);
   assert.match(fmGuide, /Scaled RDS/);
+  assert.match(polishAmGuide, /Przemodulowanie/);
+  assert.match(polishAmGuide, /\[English\]\(\.\.\/en\/am\.md\)/);
+  assert.match(polishFmGuide, /Skalowany RDS/);
+  assert.match(polishFmGuide, /\[English\]\(\.\.\/en\/fm\.md\)/);
+});
+
+test("all relative documentation links point to existing files", async () => {
+  const { access, readFile } = await import("node:fs/promises");
+  const documents = [
+    new URL("../README.md", import.meta.url),
+    new URL("../README.pl.md", import.meta.url),
+    new URL("../docs/en/am.md", import.meta.url),
+    new URL("../docs/en/fm.md", import.meta.url),
+    new URL("../docs/pl/am.md", import.meta.url),
+    new URL("../docs/pl/fm.md", import.meta.url),
+  ];
+  for (const documentUrl of documents) {
+    const markdown = await readFile(documentUrl, "utf8");
+    const relativeLinks = [...markdown.matchAll(/\[[^\]]+\]\((?!https?:)([^)#]+)(?:#[^)]+)?\)/g)];
+    for (const [, target] of relativeLinks) {
+      await access(new URL(target, documentUrl));
+    }
+  }
 });

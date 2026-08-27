@@ -16,7 +16,9 @@ import { createWavBlob } from "./wav.js";
  * controller owns files, UI state, recording, and the common three-stage flow.
  */
 export class AcousticModulationApp {
-  constructor() {
+  constructor(i18n) {
+    this.i18n = i18n;
+    this.t = i18n.t;
     const stationCarriers = MODULATION_EXPERIMENTS.fm.stationCarriers;
     this.state = {
       source: null,
@@ -40,8 +42,8 @@ export class AcousticModulationApp {
       rdsMode: RDS_MODES.NONE,
       carrierWithoutRds: MODULATION_EXPERIMENTS.fm.defaultCarrier,
       rdsTexts: {
-        [RDS_MODES.PS]: "ACOUSTIC",
-        [RDS_MODES.RADIOTEXT]: "FM carries audio and data together.",
+        [RDS_MODES.PS]: this.t("rds.defaultPs"),
+        [RDS_MODES.RADIOTEXT]: this.t("rds.defaultRadioText"),
       },
     };
     this.recorder = new MicrophoneRecorder();
@@ -69,7 +71,7 @@ export class AcousticModulationApp {
         onShowSourceChooser: () => this.ui.showSourceChooser(Boolean(this.state.source)),
         onCancelSourceChooser: () => this.ui.hideSourceChooser(),
         onInvalidDrop: () =>
-          this.ui.setStatus("The dropped file is not a supported audio file."),
+          this.ui.setStatus(this.t("errors.invalidDrop")),
         onDownloadSignal: () =>
           downloadBlob(
             this.state.signalBlob,
@@ -82,6 +84,7 @@ export class AcousticModulationApp {
           ),
       },
       { carriers: stationCarriers },
+      i18n,
     );
     this.liveReceiver = this.createLiveReceiver();
   }
@@ -95,6 +98,25 @@ export class AcousticModulationApp {
 
   getExperiment() {
     return MODULATION_EXPERIMENTS[this.state.modulationType];
+  }
+
+  getExampleTitle(example) {
+    return example.titleKey ? this.t(example.titleKey) : example.title;
+  }
+
+  createAppError(code, details = {}) {
+    const error = new Error(this.t(code, details));
+    error.code = code;
+    error.details = details;
+    return error;
+  }
+
+  getErrorMessage(error, fallbackKey) {
+    if (error?.code) {
+      const translated = this.t(error.code, error.details);
+      if (translated !== error.code) return translated;
+    }
+    return this.t(fallbackKey);
   }
 
   createLiveReceiver() {
@@ -241,9 +263,9 @@ export class AcousticModulationApp {
       const audioBuffer = await decodeAudioBlob(blob);
       this.clearGeneratedSignal();
       this.state.source = audioBuffer;
-      await this.ui.showSource({ blob, name, meta: describeAudio(audioBuffer) });
+      await this.ui.showSource({ blob, name, meta: describeAudio(audioBuffer, this.t) });
     } catch (error) {
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not read the audio file.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.readAudio"));
     } finally {
       this.setBusy(false);
     }
@@ -251,14 +273,16 @@ export class AcousticModulationApp {
 
   async loadExample(example) {
     if (this.state.busy) return;
-    this.ui.setStatus("Loading sample recording…", "info");
+    this.ui.setStatus(this.t("status.loadingSample"), "info");
     this.setBusy(true, "load");
     try {
       const response = await fetch(example.src);
-      if (!response.ok) throw new Error(`Could not load the sample (${response.status}).`);
-      await this.loadSource(await response.blob(), example.title);
+      if (!response.ok) {
+        throw this.createAppError("errors.loadSampleStatus", { status: response.status });
+      }
+      await this.loadSource(await response.blob(), this.getExampleTitle(example));
     } catch (error) {
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not load the sample recording.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.loadSample"));
       this.setBusy(false);
     }
   }
@@ -296,32 +320,36 @@ export class AcousticModulationApp {
   }
 
   async loadBandDefaults() {
-    this.ui.setStatus("Loading radio stations…", "info");
+    this.ui.setStatus(this.t("status.loadingStations"), "info");
     this.setBusy(true, "load");
     try {
       const stations = await Promise.all(
         this.getExperiment().stationCarriers.map(async (_, index) => {
           const example = AUDIO_EXAMPLES[index % AUDIO_EXAMPLES.length];
+          const exampleTitle = this.getExampleTitle(example);
           const response = await fetch(example.src);
           if (!response.ok) {
-            throw new Error(`Could not load ${example.title} (${response.status}).`);
+            throw this.createAppError("errors.loadNamedStatus", {
+              name: exampleTitle,
+              status: response.status,
+            });
           }
           const blob = await response.blob();
           const audioBuffer = await decodeAudioBlob(blob);
-          return { audioBuffer, blob, name: example.title, sourceId: example.id };
+          return { audioBuffer, blob, name: exampleTitle, sourceId: example.id };
         }),
       );
       this.state.bandStations = stations;
       stations.forEach((station, index) => {
         this.ui.setBandStation(index, {
           name: station.name,
-          meta: describeAudio(station.audioBuffer),
+          meta: describeAudio(station.audioBuffer, this.t),
           sourceId: station.sourceId,
         });
       });
       this.ui.setStatus();
     } catch (error) {
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not load the radio stations.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.loadStations"));
     } finally {
       this.setBusy(false);
     }
@@ -329,16 +357,19 @@ export class AcousticModulationApp {
 
   async loadBandExample(index, example) {
     if (this.state.busy) return;
-    this.ui.setStatus(`Loading ${example.title}…`, "info");
+    const exampleTitle = this.getExampleTitle(example);
+    this.ui.setStatus(this.t("status.loadingNamed", { name: exampleTitle }), "info");
     this.setBusy(true, "load");
     try {
       const response = await fetch(example.src);
-      if (!response.ok) throw new Error(`Could not load the sample (${response.status}).`);
-      await this.storeBandStation(index, await response.blob(), example.title, example.id);
+      if (!response.ok) {
+        throw this.createAppError("errors.loadSampleStatus", { status: response.status });
+      }
+      await this.storeBandStation(index, await response.blob(), exampleTitle, example.id);
       this.ui.setStatus();
     } catch (error) {
       this.restoreBandStationControl(index);
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not load the station programme.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.loadStationProgramme"));
     } finally {
       this.setBusy(false);
     }
@@ -346,14 +377,14 @@ export class AcousticModulationApp {
 
   async loadBandStation(index, blob, name, sourceId) {
     if (this.state.busy) return;
-    this.ui.setStatus(`Loading ${name}…`, "info");
+    this.ui.setStatus(this.t("status.loadingNamed", { name }), "info");
     this.setBusy(true, "load");
     try {
       await this.storeBandStation(index, blob, name, sourceId);
       this.ui.setStatus();
     } catch (error) {
       this.restoreBandStationControl(index);
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not load the station programme.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.loadStationProgramme"));
     } finally {
       this.setBusy(false);
     }
@@ -364,7 +395,11 @@ export class AcousticModulationApp {
     this.clearGeneratedSignal();
     this.state.bandStations[index] = { audioBuffer, blob, name, sourceId };
     this.state.bandRevision += 1;
-    this.ui.setBandStation(index, { name, meta: describeAudio(audioBuffer), sourceId });
+    this.ui.setBandStation(index, {
+      name,
+      meta: describeAudio(audioBuffer, this.t),
+      sourceId,
+    });
   }
 
   restoreBandStationControl(index) {
@@ -372,7 +407,7 @@ export class AcousticModulationApp {
     if (!station) return;
     this.ui.setBandStation(index, {
       name: station.name,
-      meta: describeAudio(station.audioBuffer),
+      meta: describeAudio(station.audioBuffer, this.t),
       sourceId: station.sourceId,
     });
   }
@@ -396,11 +431,11 @@ export class AcousticModulationApp {
       await this.ui.showSignal({
         blob,
         name,
-        meta: describeAudio(audioBuffer),
-        origin: "Uploaded",
+        meta: describeAudio(audioBuffer, this.t),
+        origin: this.t("ui.uploaded"),
       });
     } catch (error) {
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not read the modulated signal.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.readSignal"));
     } finally {
       this.setBusy(false);
     }
@@ -410,7 +445,7 @@ export class AcousticModulationApp {
     if (this.isBandMode()) return this.encodeRadioBand();
     if (!this.state.source || this.state.busy) return;
     const warning = this.validateParameters(this.state.source.sampleRate);
-    if (warning) return this.ui.setStatus(warning);
+    if (warning) return this.ui.setStatus(this.t(warning));
 
     this.ui.setStatus();
     this.setBusy(true, "encode");
@@ -433,12 +468,12 @@ export class AcousticModulationApp {
       this.clearDecoded();
       await this.ui.showSignal({
         blob,
-        name: `${experiment.label}-modulated message`,
+        name: this.t("name.modulatedMessage", { modulation: experiment.label }),
         meta: this.describeMonoSignal(this.state.signal),
-        origin: "Generated",
+        origin: this.t("ui.generated"),
       });
     } catch (error) {
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not encode the message.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.encode"));
     } finally {
       this.setBusy(false);
     }
@@ -448,7 +483,7 @@ export class AcousticModulationApp {
     if (!this.state.bandStations.every(Boolean) || this.state.busy) return;
     const sampleRate = this.state.bandStations[0].audioBuffer.sampleRate;
     if (this.state.bandStations.some(({ audioBuffer }) => audioBuffer.sampleRate !== sampleRate)) {
-      return this.ui.setStatus("All station programmes must use the same sample rate.");
+      return this.ui.setStatus(this.t("errors.sameSampleRate"));
     }
 
     this.ui.setStatus();
@@ -474,12 +509,12 @@ export class AcousticModulationApp {
       this.prepareLiveSignal();
       await this.ui.showSignal({
         blob,
-        name: `Three-station ${experiment.label} radio band`,
-        meta: `${this.describeMonoSignal(this.state.signal)} · 3 stations`,
-        origin: "Generated",
+        name: this.t("name.radioBand", { modulation: experiment.label }),
+        meta: `${this.describeMonoSignal(this.state.signal)} · ${this.t("ui.threeStations")}`,
+        origin: this.t("ui.generated"),
       });
     } catch (error) {
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not build the radio band.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.buildBand"));
     } finally {
       this.setBusy(false);
     }
@@ -493,7 +528,7 @@ export class AcousticModulationApp {
   async decodeSignal() {
     if (!this.state.signal || this.state.busy) return;
     const warning = this.validateParameters(this.state.signal.sampleRate);
-    if (warning) return this.ui.setStatus(warning);
+    if (warning) return this.ui.setStatus(this.t(warning));
 
     this.ui.setStatus();
     this.setBusy(true, "decode");
@@ -501,7 +536,7 @@ export class AcousticModulationApp {
     try {
       const experiment = this.getExperiment();
       let result;
-      let resultName = "Recovered message";
+      let resultName = this.t("ui.recoveredMessage");
       let snapshotCarrier = null;
       if (this.isBandMode()) {
         const tunedCarrier = this.ui.getReceiverCarrier();
@@ -540,7 +575,7 @@ export class AcousticModulationApp {
       });
       if (this.isBandMode()) this.ui.renderLiveReceiver(this.liveReceiver.getState());
     } catch (error) {
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not decode the modulated signal.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.decode"));
     } finally {
       this.setBusy(false);
     }
@@ -573,7 +608,7 @@ export class AcousticModulationApp {
       this.liveReceiver.setCarrier(this.ui.getReceiverCarrier());
       await this.liveReceiver.toggle();
     } catch (error) {
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not start the live receiver.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.startReceiver"));
     }
   }
 
@@ -582,7 +617,7 @@ export class AcousticModulationApp {
     try {
       await this.liveReceiver.seek(progress);
     } catch (error) {
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not seek the live receiver.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.seekReceiver"));
     }
   }
 
@@ -598,13 +633,13 @@ export class AcousticModulationApp {
     );
     const distance = Math.abs(carriers[nearestIndex] - tunedCarrier);
     if (this.state.signalOrigin === "generated-band" && distance <= 500) {
-      return `${this.state.bandStations[nearestIndex]?.name ?? "Station"} · ${(
-        tunedCarrier / 1000
-      ).toFixed(1)} kHz`;
+      return `${this.state.bandStations[nearestIndex]?.name ?? this.t("name.stationFallback")} · ${this.i18n.number(
+        tunedCarrier / 1000,
+      )} kHz`;
     }
-    return `${distance <= 500 ? "Tuned frequency" : "Between stations"} · ${(
-      tunedCarrier / 1000
-    ).toFixed(1)} kHz`;
+    return `${this.t(
+      distance <= 500 ? "name.tunedFrequency" : "name.betweenStations",
+    )} · ${this.i18n.number(tunedCarrier / 1000)} kHz`;
   }
 
   rdsModeChanged(mode) {
@@ -646,17 +681,17 @@ export class AcousticModulationApp {
         onProgress: (elapsed) => this.ui.setRecording(true, elapsed),
         onComplete: async (blob) => {
           this.ui.setRecording(false);
-          await this.loadSource(blob, "Microphone recording");
+          await this.loadSource(blob, this.t("name.microphone"));
         },
       });
     } catch (error) {
       this.ui.setRecording(false);
-      this.ui.setStatus(error instanceof Error ? error.message : "Could not start the microphone.");
+      this.ui.setStatus(this.getErrorMessage(error, "errors.startMicrophone"));
     }
   }
 
   describeMonoSignal({ duration, sampleRate }) {
-    return `${formatDuration(duration)} · ${(sampleRate / 1000).toFixed(0)} kHz · mono`;
+    return `${formatDuration(duration)} · ${this.i18n.number(sampleRate / 1000, 0)} kHz · ${this.t("audio.mono")}`;
   }
 
   yieldToBrowser() {

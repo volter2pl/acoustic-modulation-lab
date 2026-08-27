@@ -105,6 +105,36 @@ select:focus-visible,
   color: var(--text);
 }
 
+.header-links,
+.language-switch {
+  display: flex;
+  align-items: center;
+}
+
+.header-links {
+  gap: 18px;
+}
+
+.language-switch {
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.language-switch a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.language-switch a:hover,
+.language-switch a.is-active {
+  color: var(--text);
+}
+
+.language-switch a.is-active {
+  font-weight: 750;
+}
+
 main {
   width: min(1480px, calc(100% - 48px));
   margin: 0 auto;
@@ -1100,6 +1130,14 @@ input[type="range"] {
 
   .site-header {
     padding-top: 18px;
+  }
+
+  .brand > span:last-child {
+    display: none;
+  }
+
+  .header-links {
+    gap: 12px;
   }
 
   .mode-switches {

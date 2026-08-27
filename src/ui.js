@@ -86,13 +86,15 @@ const ELEMENT_IDS = [
 ];
 
 export class AppUI {
-  constructor(examples, handlers, bandConfig) {
+  constructor(examples, handlers, bandConfig, i18n) {
     this.elements = Object.fromEntries(
       ELEMENT_IDS.map((id) => [id, document.getElementById(id)]),
     );
     this.handlers = handlers;
     this.examples = examples;
     this.bandConfig = bandConfig;
+    this.i18n = i18n;
+    this.t = i18n.t;
     this.bandControls = [];
     this.players = this.createPlayers();
     this.renderExamples(examples);
@@ -111,6 +113,7 @@ export class AppUI {
         accentColor: [169, 157, 255],
         frequencyMax: 8000,
         height: 190,
+        translate: this.t,
       }),
       signal: new SpectrumPlayer({
         container: document.getElementById("signal-spectrum"),
@@ -122,6 +125,7 @@ export class AppUI {
         frequencyMax: 24000,
         height: 125,
         volume: 0.12,
+        translate: this.t,
       }),
       result: new SpectrumPlayer({
         container: document.getElementById("result-spectrum"),
@@ -132,8 +136,21 @@ export class AppUI {
         accentColor: [97, 213, 167],
         frequencyMax: 8000,
         height: 300,
+        translate: this.t,
       }),
     };
+  }
+
+  formatKhz(value) {
+    return `${this.i18n.number(value / 1000)} kHz`;
+  }
+
+  getExampleTitle(example) {
+    return example.titleKey ? this.t(example.titleKey) : example.title;
+  }
+
+  getExampleMeta(example) {
+    return example.metaKey ? this.t(example.metaKey) : example.meta;
   }
 
   getParameters() {
@@ -167,10 +184,11 @@ export class AppUI {
 
   renderReceiverTuning() {
     const carrier = this.getReceiverCarrier();
-    this.elements["receiver-carrier-value"].textContent = `${(carrier / 1000).toFixed(1)} kHz`;
+    this.elements["receiver-carrier-value"].textContent = this.formatKhz(carrier);
     for (const button of this.elements["receiver-controls"].querySelectorAll(
       "[data-carrier]",
     )) {
+      button.textContent = this.formatKhz(Number(button.dataset.carrier));
       button.classList.toggle("is-active", Number(button.dataset.carrier) === carrier);
     }
   }
@@ -185,11 +203,17 @@ export class AppUI {
     this.elements["am-parameters"].hidden = fm;
     this.elements["rds-controls"].hidden = !fm;
     this.elements["band-parameter-label"].textContent = fm
-      ? "Deviation"
-      : "Modulation depth";
-    this.elements["band-parameter-value"].textContent = fm ? "±0.75 kHz" : "80%";
-    this.elements["band-feature-label"].textContent = fm ? "RDS" : "Detection";
-    this.elements["band-feature-value"].textContent = fm ? "Off" : "Envelope";
+      ? this.t("ui.deviation")
+      : this.t("ui.modulationDepth");
+    this.elements["band-parameter-value"].textContent = fm
+      ? `±${this.formatKhz(750)}`
+      : "80%";
+    this.elements["band-feature-label"].textContent = fm
+      ? "RDS"
+      : this.t("ui.detection");
+    this.elements["band-feature-value"].textContent = fm
+      ? this.t("ui.off")
+      : this.t("ui.envelope");
   }
 
   setExperimentMode(mode, modulation) {
@@ -204,23 +228,25 @@ export class AppUI {
     this.elements["band-controls"].hidden = single;
     this.elements["decode-button"].hidden = !single;
     this.elements["receiver-controls"].hidden = single;
-    this.elements["source-title"].textContent = single ? "Message" : "Stations";
+    this.elements["source-title"].textContent = this.t(
+      single ? "ui.message" : "ui.stations",
+    );
     const label = modulation.toUpperCase();
     this.elements["signal-title"].textContent = single
-      ? `${label} signal`
-      : `${label} radio band`;
+      ? this.t("ui.signal", { modulation: label })
+      : this.t("ui.bandSignal", { modulation: label });
     this.elements["result-title"].textContent = single
-      ? "Recovered audio"
-      : "Tuned station";
+      ? this.t("ui.recoveredAudio")
+      : this.t("ui.tunedStation");
     this.elements["signal-file-button"].textContent = single
-      ? `Load your own ${label} signal`
-      : `Load your own ${label} radio band`;
+      ? this.t("ui.loadSignal", { modulation: label })
+      : this.t("ui.loadBand", { modulation: label });
     this.elements["result-empty-title"].textContent = single
-      ? "Your result will appear here"
-      : "Tune the receiver";
+      ? this.t("ui.resultHere")
+      : this.t("ui.tuneReceiver");
     this.elements["result-empty-copy"].textContent = single
-      ? `Prepare an ${label} signal first`
-      : "Prepare a radio band first";
+      ? this.t("ui.prepareSignal", { modulation: label })
+      : this.t("ui.prepareBand");
     this.players.result.setExternalPlayback(
       single
         ? null
@@ -230,9 +256,11 @@ export class AppUI {
           },
     );
     this.elements["result-download"].textContent = single
-      ? "Download WAV"
-      : "Download snapshot WAV";
-    this.elements["result-ready-state"].textContent = single ? "Ready" : "Live receiver";
+      ? this.t("ui.downloadWav")
+      : this.t("ui.downloadSnapshot");
+    this.elements["result-ready-state"].textContent = this.t(
+      single ? "ui.ready" : "ui.liveReceiver",
+    );
     this.renderReceiverTuning();
   }
 
@@ -260,10 +288,10 @@ export class AppUI {
 
     this.elements["rds-input-wrap"].hidden = !enabled;
     this.elements["rds-input-label"].textContent = isPs
-      ? "Programme Service"
+      ? this.t("ui.programmeService")
       : "RadioText";
     input.maxLength = isPs ? 8 : 64;
-    input.placeholder = isPs ? "8 characters" : "Up to 64 characters";
+    input.placeholder = this.t(isPs ? "ui.psPlaceholder" : "ui.radioTextPlaceholder");
     input.value = text.slice(0, input.maxLength);
     this.updateRdsCounter();
   }
@@ -287,28 +315,28 @@ export class AppUI {
   }) {
     const single = mode === "single";
     const { carrier, deviation, modulationDepth } = parameters;
-    const formatKhz = (value) => `${(value / 1000).toFixed(1)} kHz`;
+    const formatKhz = (value) => this.formatKhz(value);
 
     this.elements["carrier-value"].textContent = formatKhz(carrier);
     this.elements["deviation-value"].textContent = `±${formatKhz(deviation)}`;
-    this.elements["frequency-range"].textContent = `${((carrier - deviation) / 1000).toFixed(
-      1,
-    )}–${((carrier + deviation) / 1000).toFixed(1)} kHz`;
+    this.elements["frequency-range"].textContent = `${this.i18n.number(
+      (carrier - deviation) / 1000,
+    )}–${this.i18n.number((carrier + deviation) / 1000)} kHz`;
     this.elements["modulation-depth-value"].textContent = `${modulationDepth}%`;
     const depthState = this.elements["modulation-depth-state"];
     depthState.textContent =
       modulationDepth === 0
-        ? "Carrier only"
+        ? this.t("ui.carrierOnly")
         : modulationDepth <= 100
-          ? "Valid"
-          : "Overmodulated";
+          ? this.t("ui.valid")
+          : this.t("ui.overmodulated");
     depthState.classList.toggle("is-warning", modulationDepth > 100);
-    this.elements["occupied-bandwidth"].textContent = `≈${(
-      occupiedBandwidth / 1000
-    ).toFixed(1)} kHz`;
+    this.elements["occupied-bandwidth"].textContent = `≈${this.i18n.number(
+      occupiedBandwidth / 1000,
+    )} kHz`;
 
     this.elements["parameter-warning"].hidden = !warning;
-    this.elements["parameter-warning"].textContent = warning || "";
+    this.elements["parameter-warning"].textContent = warning ? this.t(warning) : "";
     this.elements["encode-button"].disabled = !sourceReady || Boolean(warning) || busy;
     this.elements["decode-button"].disabled =
       !single || !signalReady || Boolean(warning) || stale || busy;
@@ -318,15 +346,15 @@ export class AppUI {
     this.elements["encode-button"].textContent =
       busy && operation === "encode"
         ? single
-          ? "Encoding…"
-          : "Building band…"
+          ? this.t("ui.encoding")
+          : this.t("ui.buildingBand")
         : single
-          ? "Encode message"
-          : "Build radio band";
+          ? this.t("ui.encodeMessage")
+          : this.t("ui.buildBand");
     this.elements["decode-button"].textContent =
-      busy && operation === "decode" ? "Decoding…" : "Decode signal";
+      busy && operation === "decode" ? this.t("ui.decoding") : this.t("ui.decodeSignal");
     this.elements["tune-button"].textContent =
-      busy && operation === "decode" ? "Updating…" : "Update spectrum & WAV";
+      busy && operation === "decode" ? this.t("ui.updating") : this.t("ui.updateSpectrum");
     this.elements["rds-mode"].disabled = busy;
     this.elements["rds-text"].disabled = busy;
     this.elements.carrier.disabled = busy;
@@ -402,23 +430,26 @@ export class AppUI {
     meta,
     data,
     dataExpected,
-    name = "Recovered message",
+    name = null,
     snapshotCarrier = null,
   }) {
     this.elements["result-empty"].hidden = true;
     this.elements["result-loaded"].hidden = false;
     this.elements["result-meta"].textContent = meta;
-    this.elements["result-name"].textContent = name;
+    this.elements["result-name"].textContent = name ?? this.t("ui.recoveredMessage");
     this.elements["result-rds"].hidden = !dataExpected;
     if (dataExpected) {
       this.elements["result-rds"].classList.toggle("is-missing", !data);
       this.elements["result-rds-mode"].textContent =
         data?.mode === "ps" ? "PS" : "RadioText";
       this.elements["result-rds-text"].textContent =
-        data?.text || "No valid RDS groups recovered";
+        data?.text || this.t("ui.rdsMissing");
       this.elements["result-rds-meta"].textContent = data
-        ? `Recovered after ${data.completedAt.toFixed(1)} s · ${data.validGroups} valid groups`
-        : "Check the selected mode, carrier, and deviation";
+        ? this.t("ui.rdsRecovered", {
+            seconds: this.i18n.number(data.completedAt),
+            groups: data.validGroups,
+          })
+        : this.t("ui.rdsCheck");
     }
     await this.players.result.load(blob);
     this.renderResultSnapshot(snapshotCarrier, snapshotCarrier);
@@ -435,8 +466,12 @@ export class AppUI {
     const stale = snapshotCarrier !== currentCarrier;
     label.classList.toggle("is-stale", stale);
     label.textContent = stale
-      ? `Spectrum: ${(snapshotCarrier / 1000).toFixed(1)} kHz`
-      : `Live + spectrum: ${(snapshotCarrier / 1000).toFixed(1)} kHz`;
+      ? this.t("ui.spectrumAt", {
+          frequency: this.i18n.number(snapshotCarrier / 1000),
+        })
+      : this.t("ui.liveSpectrumAt", {
+          frequency: this.i18n.number(snapshotCarrier / 1000),
+        });
   }
 
   renderLiveReceiver(state) {
@@ -454,10 +489,12 @@ export class AppUI {
   setRecording(active, elapsedSeconds = 0) {
     const elapsed = formatDuration(elapsedSeconds);
     this.elements["record-button"].classList.toggle("is-recording", active);
-    this.elements["record-label"].textContent = active ? `Stop · ${elapsed}` : "Record voice";
+    this.elements["record-label"].textContent = active
+      ? this.t("ui.stopRecording", { elapsed })
+      : this.t("ui.recordVoice");
     this.elements["source-record-again"].innerHTML = active
-      ? `■ Stop · ${elapsed}`
-      : '<span aria-hidden="true">●</span> Record';
+      ? `■ ${this.t("ui.stopRecording", { elapsed })}`
+      : `<span aria-hidden="true">●</span> ${this.t("ui.record")}`;
     this.elements["source-replace"].disabled = active;
   }
 
@@ -478,14 +515,14 @@ export class AppUI {
       const copy = document.createElement("span");
       copy.className = "example-copy";
       const title = document.createElement("strong");
-      title.textContent = example.title;
+      title.textContent = this.getExampleTitle(example);
       const meta = document.createElement("span");
-      meta.textContent = example.meta;
+      meta.textContent = this.getExampleMeta(example);
       copy.append(title, meta);
 
       const action = document.createElement("span");
       action.className = "example-use";
-      action.textContent = "Use";
+      action.textContent = this.t("ui.use");
       button.append(icon, copy, action);
       button.addEventListener("click", () => this.handlers.onExample(example));
       fragment.append(button);
@@ -506,18 +543,22 @@ export class AppUI {
       header.className = "band-station-header";
       const frequency = document.createElement("strong");
       frequency.className = "station-frequency";
-      frequency.textContent = `${(carrier / 1000).toFixed(1)} kHz`;
+      const carrierValue = this.i18n.number(carrier / 1000);
+      frequency.textContent = `${carrierValue} kHz`;
       const select = document.createElement("select");
-      select.setAttribute("aria-label", `Source for station ${(carrier / 1000).toFixed(1)} kHz`);
+      select.setAttribute(
+        "aria-label",
+        this.t("aria.sourceForStation", { frequency: carrierValue }),
+      );
       for (const example of this.examples) {
         const option = document.createElement("option");
         option.value = example.id;
-        option.textContent = example.title;
+        option.textContent = this.getExampleTitle(example);
         select.append(option);
       }
       const customOption = document.createElement("option");
       customOption.value = "custom";
-      customOption.textContent = "Custom file…";
+      customOption.textContent = this.t("ui.customFile");
       select.append(customOption);
       select.value = initialExample.id;
       header.append(frequency, select);
@@ -525,15 +566,15 @@ export class AppUI {
       const fileRow = document.createElement("div");
       fileRow.className = "station-source-meta";
       const name = document.createElement("strong");
-      name.textContent = initialExample.title;
+      name.textContent = this.getExampleTitle(initialExample);
       const meta = document.createElement("span");
-      meta.textContent = initialExample.meta;
+      meta.textContent = this.getExampleMeta(initialExample);
       fileRow.append(name, meta);
 
       const levelRow = document.createElement("label");
       levelRow.className = "station-level";
       const levelCopy = document.createElement("span");
-      levelCopy.textContent = "Signal level";
+      levelCopy.textContent = this.t("ui.signalLevel");
       const levelOutput = document.createElement("output");
       levelOutput.textContent = "100%";
       const level = document.createElement("input");
@@ -542,7 +583,10 @@ export class AppUI {
       level.max = "100";
       level.step = "5";
       level.value = "100";
-      level.setAttribute("aria-label", `Signal level for ${(carrier / 1000).toFixed(1)} kHz`);
+      level.setAttribute(
+        "aria-label",
+        this.t("aria.signalLevelForStation", { frequency: carrierValue }),
+      );
       levelRow.append(levelCopy, levelOutput, level);
 
       const file = document.createElement("input");

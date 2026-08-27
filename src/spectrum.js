@@ -33,6 +33,7 @@ export class SpectrumPlayer {
     frequencyMax,
     height,
     volume = 0.8,
+    translate = (key) => key,
   }) {
     this.container = container;
     this.engineContainer = engineContainer;
@@ -44,6 +45,7 @@ export class SpectrumPlayer {
     this.height = height;
     this.waveSurfer = null;
     this.volume = volume;
+    this.t = translate;
     this.externalPlayback = null;
     this.audio = this.createAudio();
 
@@ -115,7 +117,10 @@ export class SpectrumPlayer {
       // Spectrogram plugin with no AudioBuffer to draw.
       await this.waveSurfer.loadBlob(blob);
     } else {
-      this.container.innerHTML = '<p class="spectrum-error">Spectrum preview is unavailable.</p>';
+      const message = document.createElement("p");
+      message.className = "spectrum-error";
+      message.textContent = this.t("ui.spectrumUnavailable");
+      this.container.replaceChildren(message);
     }
 
     this.renderTime();
@@ -155,7 +160,10 @@ export class SpectrumPlayer {
   renderExternalPlayback({ playing, currentTime, duration }) {
     if (!this.externalPlayback) return;
     this.playButton.textContent = playing ? "Ⅱ" : "▶";
-    this.playButton.setAttribute("aria-label", playing ? "Pause live receiver" : "Play live receiver");
+    this.playButton.setAttribute(
+      "aria-label",
+      this.t(playing ? "aria.pauseReceiver" : "aria.playReceiver"),
+    );
     this.timeElement.textContent = `${formatDuration(currentTime)} / ${formatDuration(duration)}`;
     const progress = Number.isFinite(duration) && duration > 0 ? currentTime / duration : 0;
     this.playhead.style.left = `${Math.max(0, Math.min(1, progress)) * 100}%`;
@@ -171,7 +179,10 @@ export class SpectrumPlayer {
     if (this.externalPlayback) return;
     const playing = !this.audio.paused && !this.audio.ended;
     this.playButton.textContent = playing ? "Ⅱ" : "▶";
-    this.playButton.setAttribute("aria-label", playing ? "Pause playback" : "Play");
+    this.playButton.setAttribute(
+      "aria-label",
+      this.t(playing ? "aria.pause" : "aria.play"),
+    );
   }
 
   renderTime() {

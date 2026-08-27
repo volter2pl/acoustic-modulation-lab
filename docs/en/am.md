@@ -1,6 +1,8 @@
 # Amplitude modulation
 
-[Back to the laboratory overview](../README.md)
+**Language:** English | [Polski](../pl/am.md)
+
+[Back to the laboratory overview](../../README.md)
 
 Amplitude modulation stores a message in the changing envelope of a carrier.
 The experiment uses conventional double-sideband AM with a transmitted carrier,

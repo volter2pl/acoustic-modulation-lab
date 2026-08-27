@@ -54,13 +54,13 @@ export const FM_EXPERIMENT = Object.freeze({
         : RDS_BASEBAND_BANDWIDTH;
     const occupiedHalfBandwidth = parameters.deviation + messageBandwidth;
     if (parameters.carrier + parameters.deviation >= nyquist) {
-      return "The instantaneous-frequency range exceeds the Nyquist limit.";
+      return "validation.fmInstantaneousNyquist";
     }
     if (parameters.carrier + occupiedHalfBandwidth > nyquist - 500) {
-      return "The estimated FM bandwidth is too close to the Nyquist limit.";
+      return "validation.fmBandwidthNyquist";
     }
     if (parameters.carrier - occupiedHalfBandwidth < 150) {
-      return "The estimated FM bandwidth extends below the valid frequency range.";
+      return "validation.fmBandwidthLower";
     }
     return null;
   },
@@ -72,7 +72,7 @@ export const FM_EXPERIMENT = Object.freeze({
       tunedCarrier - occupiedHalfBandwidth < 150 ||
       tunedCarrier + occupiedHalfBandwidth > sampleRate / 2 - 500
     ) {
-      return "The receiver bandwidth extends outside the valid frequency range.";
+      return "validation.fmReceiverRange";
     }
     return null;
   },

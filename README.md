@@ -1,5 +1,7 @@
 # Acoustic Modulation Lab
 
+**Language:** English | [Polski](README.pl.md)
+
 **Acoustic Modulation Lab makes AM and FM radio principles visible and audible
 inside an ordinary browser.**
 
@@ -9,6 +11,7 @@ different, but the AM and FM equations, sidebands, tuning, and demodulation
 principles remain the same.
 
 [Open the live laboratory](https://volter2pl.github.io/acoustic-modulation-lab/)
+([Polish interface](https://volter2pl.github.io/acoustic-modulation-lab/?lang=pl))
 
 ```text
 voice or music
@@ -48,8 +51,8 @@ recovered-audio views cover 0–8 kHz. The modulated-signal view covers the full
 
 For the complete theory and implementation choices, continue with:
 
-- [Amplitude modulation](docs/am.md)
-- [Frequency modulation and RDS](docs/fm.md)
+- [Amplitude modulation](docs/en/am.md)
+- [Frequency modulation and RDS](docs/en/fm.md)
 
 ## Single station and radio band
 

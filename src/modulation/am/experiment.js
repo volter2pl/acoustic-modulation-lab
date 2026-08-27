@@ -33,13 +33,13 @@ export const AM_EXPERIMENT = Object.freeze({
   validateSingle({ sampleRate, parameters }) {
     const guard = 500;
     if (parameters.carrier - DEFAULT_AM_MESSAGE_BANDWIDTH < 150) {
-      return "The lower AM sideband extends below the valid frequency range.";
+      return "validation.amLowerSideband";
     }
     if (
       parameters.carrier + DEFAULT_AM_MESSAGE_BANDWIDTH >
       sampleRate / 2 - guard
     ) {
-      return "The upper AM sideband is too close to the Nyquist limit.";
+      return "validation.amUpperSideband";
     }
     return null;
   },
@@ -49,7 +49,7 @@ export const AM_EXPERIMENT = Object.freeze({
       tunedCarrier - AM_BAND_MESSAGE_BANDWIDTH < 150 ||
       tunedCarrier + AM_BAND_MESSAGE_BANDWIDTH > sampleRate / 2 - 500
     ) {
-      return "The AM receiver bandwidth extends outside the valid frequency range.";
+      return "validation.amReceiverRange";
     }
     return null;
   },
