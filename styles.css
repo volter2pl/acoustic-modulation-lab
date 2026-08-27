@@ -92,20 +92,17 @@ select:focus-visible,
   letter-spacing: 0.05em;
 }
 
-.local-badge {
+.github-link {
   display: inline-flex;
-  gap: 8px;
   align-items: center;
   color: var(--muted-strong);
   font-size: 12px;
+  text-decoration: none;
+  transition: color 140ms ease;
 }
 
-.local-badge span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--result);
-  box-shadow: 0 0 10px rgb(97 213 167 / 55%);
+.github-link:hover {
+  color: var(--text);
 }
 
 main {
@@ -1048,16 +1045,6 @@ input[type="range"] {
 .rds-result.is-missing .rds-result-mode {
   color: #ffc0c0;
   background: rgb(255 118 118 / 10%);
-}
-
-.safety-note {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-  margin: 20px 0 0;
-  color: #717a86;
-  font-size: 10px;
 }
 
 .is-busy {

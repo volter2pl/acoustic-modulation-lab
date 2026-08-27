@@ -426,6 +426,9 @@ test("the interface uses spectrograms instead of amplitude waveforms", async () 
   assert.match(html, /id="fm-spectrum"/);
   assert.match(html, /id="result-spectrum"/);
   assert.match(html, /id="result-spectrum-state"/);
+  assert.match(html, /href="https:\/\/github\.com\/volter2pl\/acoustic-fm"/);
+  assert.doesNotMatch(html, /Runs locally/);
+  assert.doesNotMatch(html, /Play high-frequency signals at a low volume/);
   assert.doesNotMatch(html, /id="[^"]*waveform/);
 });
 
