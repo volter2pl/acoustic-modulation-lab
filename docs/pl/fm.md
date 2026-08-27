@@ -1,6 +1,7 @@
 # Modulacja częstotliwości i RDS
 
-**Język:** [English](../en/fm.md) | Polski | [Deutsch](../de/fm.md)
+**Język:** [English](../en/fm.md) | Polski | [Deutsch](../de/fm.md) |
+[Español](../es/fm.md)
 
 [Powrót do opisu laboratorium](../../README.pl.md)
 

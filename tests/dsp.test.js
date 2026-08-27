@@ -675,16 +675,18 @@ test("English remains the default interface and translations stay isolated", asy
   const contents = await Promise.all(
     sourceFiles.map((file) => readFile(new URL(`../src/${file}`, import.meta.url), "utf8")),
   );
-  const localizedCharacters = /[\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c\u0104\u0106\u0118\u0141\u0143\u00d3\u015a\u0179\u017bäöüßÄÖÜ]/;
+  const localizedCharacters = /[\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c\u0104\u0106\u0118\u0141\u0143\u00d3\u015a\u0179\u017bäöüßÄÖÜáéíñúÁÉÍÑÚ]/;
   assert.doesNotMatch(`${interfaceHtml}\n${contents.join("\n")}`, localizedCharacters);
 });
 
-test("the lang query selects complete Polish and German interfaces", async () => {
+test("the lang query selects every complete localized interface", async () => {
   assert.equal(getLanguage("?lang=pl"), "pl");
   assert.equal(getLanguage("?mode=band&lang=pl"), "pl");
   assert.equal(getLanguage("?lang=en"), "en");
   assert.equal(getLanguage("?lang=de"), "de");
   assert.equal(getLanguage("?mode=band&lang=de"), "de");
+  assert.equal(getLanguage("?lang=es"), "es");
+  assert.equal(getLanguage("?mode=band&lang=es"), "es");
   assert.equal(getLanguage("?lang=fr"), "en");
   assert.equal(getLanguage(""), "en");
 
@@ -694,6 +696,10 @@ test("the lang query selects complete Polish and German interfaces", async () =>
   );
   assert.deepEqual(
     Object.keys(TRANSLATIONS.de).sort(),
+    Object.keys(TRANSLATIONS.en).sort(),
+  );
+  assert.deepEqual(
+    Object.keys(TRANSLATIONS.es).sort(),
     Object.keys(TRANSLATIONS.en).sort(),
   );
   const polish = createI18n("pl");
@@ -710,11 +716,19 @@ test("the lang query selects complete Polish and German interfaces", async () =>
     "Zuerst ein FM-Signal erzeugen",
   );
   assert.equal(german.number(12), "12,0");
+  const spanish = createI18n("es");
+  assert.equal(spanish.t("ui.singleStation"), "Una emisora");
+  assert.equal(
+    spanish.t("ui.prepareSignal", { modulation: "FM" }),
+    "Prepara primero una señal FM",
+  );
+  assert.equal(spanish.number(12), "12,0");
 
   const { readFile } = await import("node:fs/promises");
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   assert.match(html, /href="\?lang=pl" data-language="pl"/);
   assert.match(html, /href="\?lang=de" data-language="de"/);
+  assert.match(html, /href="\?lang=es" data-language="es"/);
   assert.match(html, /data-home-link/);
   assert.match(html, /data-i18n="ui\.singleStation"/);
   assert.match(html, /data-i18n-aria-label="aria\.signalFlow"/);
@@ -726,22 +740,28 @@ test("educational documentation covers AM and FM as separate concepts", async ()
     overview,
     polishOverview,
     germanOverview,
+    spanishOverview,
     amGuide,
     fmGuide,
     polishAmGuide,
     polishFmGuide,
     germanAmGuide,
     germanFmGuide,
+    spanishAmGuide,
+    spanishFmGuide,
   ] = await Promise.all([
     readFile(new URL("../README.md", import.meta.url), "utf8"),
     readFile(new URL("../README.pl.md", import.meta.url), "utf8"),
     readFile(new URL("../README.de.md", import.meta.url), "utf8"),
+    readFile(new URL("../README.es.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/en/am.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/en/fm.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/pl/am.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/pl/fm.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/de/am.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/de/fm.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/es/am.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/es/fm.md", import.meta.url), "utf8"),
   ]);
   assert.match(overview, /Acoustic Modulation Lab/);
   assert.match(overview, /\[Polski\]\(README\.pl\.md\)/);
@@ -752,6 +772,8 @@ test("educational documentation covers AM and FM as separate concepts", async ()
   assert.match(polishOverview, /acoustic-modulation-lab\/\?lang=pl/);
   assert.match(germanOverview, /Was das Labor zeigt/);
   assert.match(germanOverview, /acoustic-modulation-lab\/\?lang=de/);
+  assert.match(spanishOverview, /Qué demuestra el laboratorio/);
+  assert.match(spanishOverview, /acoustic-modulation-lab\/\?lang=es/);
   assert.match(amGuide, /s\(t\) = A · \[1 \+ μm\(t\)\]/);
   assert.match(amGuide, /Overmodulation/);
   assert.match(fmGuide, /fi\(t\) = fc \+ Δf · m\(t\)/);
@@ -764,6 +786,10 @@ test("educational documentation covers AM and FM as separate concepts", async ()
   assert.match(germanAmGuide, /\[Polski\]\(\.\.\/pl\/am\.md\)/);
   assert.match(germanFmGuide, /Skaliertes RDS/);
   assert.match(germanFmGuide, /\[Polski\]\(\.\.\/pl\/fm\.md\)/);
+  assert.match(spanishAmGuide, /Sobremodulación/);
+  assert.match(spanishAmGuide, /\[Deutsch\]\(\.\.\/de\/am\.md\)/);
+  assert.match(spanishFmGuide, /RDS a escala/);
+  assert.match(spanishFmGuide, /\[Deutsch\]\(\.\.\/de\/fm\.md\)/);
 });
 
 test("all relative documentation links point to existing files", async () => {
@@ -772,12 +798,15 @@ test("all relative documentation links point to existing files", async () => {
     new URL("../README.md", import.meta.url),
     new URL("../README.pl.md", import.meta.url),
     new URL("../README.de.md", import.meta.url),
+    new URL("../README.es.md", import.meta.url),
     new URL("../docs/en/am.md", import.meta.url),
     new URL("../docs/en/fm.md", import.meta.url),
     new URL("../docs/pl/am.md", import.meta.url),
     new URL("../docs/pl/fm.md", import.meta.url),
     new URL("../docs/de/am.md", import.meta.url),
     new URL("../docs/de/fm.md", import.meta.url),
+    new URL("../docs/es/am.md", import.meta.url),
+    new URL("../docs/es/fm.md", import.meta.url),
   ];
   for (const documentUrl of documents) {
     const markdown = await readFile(documentUrl, "utf8");
