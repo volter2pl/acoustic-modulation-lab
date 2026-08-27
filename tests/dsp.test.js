@@ -675,7 +675,7 @@ test("English remains the default interface and translations stay isolated", asy
   const contents = await Promise.all(
     sourceFiles.map((file) => readFile(new URL(`../src/${file}`, import.meta.url), "utf8")),
   );
-  const localizedCharacters = /[\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c\u0104\u0106\u0118\u0141\u0143\u00d3\u015a\u0179\u017bäöüßÄÖÜáéíñúÁÉÍÑÚãõçâêôÃÕÇÂÊÔ]/;
+  const localizedCharacters = /[\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c\u0104\u0106\u0118\u0141\u0143\u00d3\u015a\u0179\u017bäöüßÄÖÜáéíñúÁÉÍÑÚãõçâêôÃÕÇÂÊÔ\u4e00-\u9fff]/;
   assert.doesNotMatch(`${interfaceHtml}\n${contents.join("\n")}`, localizedCharacters);
 });
 
@@ -689,6 +689,8 @@ test("the lang query selects every complete localized interface", async () => {
   assert.equal(getLanguage("?mode=band&lang=es"), "es");
   assert.equal(getLanguage("?lang=pt-BR"), "pt-BR");
   assert.equal(getLanguage("?lang=pt-br"), "pt-BR");
+  assert.equal(getLanguage("?lang=zh-CN"), "zh-CN");
+  assert.equal(getLanguage("?lang=zh-cn"), "zh-CN");
   assert.equal(getLanguage("?lang=fr"), "en");
   assert.equal(getLanguage(""), "en");
 
@@ -706,6 +708,10 @@ test("the lang query selects every complete localized interface", async () => {
   );
   assert.deepEqual(
     Object.keys(TRANSLATIONS["pt-BR"]).sort(),
+    Object.keys(TRANSLATIONS.en).sort(),
+  );
+  assert.deepEqual(
+    Object.keys(TRANSLATIONS["zh-CN"]).sort(),
     Object.keys(TRANSLATIONS.en).sort(),
   );
   const polish = createI18n("pl");
@@ -737,6 +743,18 @@ test("the lang query selects every complete localized interface", async () => {
     "Primeiro prepare um sinal FM",
   );
   assert.equal(brazilianPortuguese.number(12), "12,0");
+  const simplifiedChinese = createI18n("zh-CN");
+  assert.equal(createI18n("zh-cn").language, "zh-CN");
+  assert.equal(simplifiedChinese.t("ui.singleStation"), "单个电台");
+  assert.equal(
+    simplifiedChinese.t("ui.prepareSignal", { modulation: "FM" }),
+    "请先生成 FM 信号",
+  );
+  assert.equal(simplifiedChinese.number(12), "12.0");
+  for (const translations of Object.values(TRANSLATIONS)) {
+    assert.match(translations["rds.defaultPs"], /^[\x20-\x7e]*$/);
+    assert.match(translations["rds.defaultRadioText"], /^[\x20-\x7e]*$/);
+  }
 
   const { readFile } = await import("node:fs/promises");
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
@@ -744,6 +762,7 @@ test("the lang query selects every complete localized interface", async () => {
   assert.match(html, /href="\?lang=de" data-language="de"/);
   assert.match(html, /href="\?lang=es" data-language="es"/);
   assert.match(html, /href="\?lang=pt-BR" data-language="pt-BR"/);
+  assert.match(html, /href="\?lang=zh-CN" data-language="zh-CN"/);
   assert.match(html, /data-home-link/);
   assert.match(html, /data-i18n="ui\.singleStation"/);
   assert.match(html, /data-i18n-aria-label="aria\.signalFlow"/);
@@ -757,6 +776,7 @@ test("educational documentation covers AM and FM as separate concepts", async ()
     germanOverview,
     spanishOverview,
     brazilianOverview,
+    chineseOverview,
     amGuide,
     fmGuide,
     polishAmGuide,
@@ -767,12 +787,15 @@ test("educational documentation covers AM and FM as separate concepts", async ()
     spanishFmGuide,
     brazilianAmGuide,
     brazilianFmGuide,
+    chineseAmGuide,
+    chineseFmGuide,
   ] = await Promise.all([
     readFile(new URL("../README.md", import.meta.url), "utf8"),
     readFile(new URL("../README.pl.md", import.meta.url), "utf8"),
     readFile(new URL("../README.de.md", import.meta.url), "utf8"),
     readFile(new URL("../README.es.md", import.meta.url), "utf8"),
     readFile(new URL("../README.pt-BR.md", import.meta.url), "utf8"),
+    readFile(new URL("../README.zh-CN.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/en/am.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/en/fm.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/pl/am.md", import.meta.url), "utf8"),
@@ -783,6 +806,8 @@ test("educational documentation covers AM and FM as separate concepts", async ()
     readFile(new URL("../docs/es/fm.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/pt-BR/am.md", import.meta.url), "utf8"),
     readFile(new URL("../docs/pt-BR/fm.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/zh-CN/am.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/zh-CN/fm.md", import.meta.url), "utf8"),
   ]);
   assert.match(overview, /Acoustic Modulation Lab/);
   assert.match(overview, /\[Polski\]\(README\.pl\.md\)/);
@@ -797,6 +822,8 @@ test("educational documentation covers AM and FM as separate concepts", async ()
   assert.match(spanishOverview, /acoustic-modulation-lab\/\?lang=es/);
   assert.match(brazilianOverview, /O que o laboratório demonstra/);
   assert.match(brazilianOverview, /acoustic-modulation-lab\/\?lang=pt-BR/);
+  assert.match(chineseOverview, /实验室展示什么/);
+  assert.match(chineseOverview, /acoustic-modulation-lab\/\?lang=zh-CN/);
   assert.match(amGuide, /s\(t\) = A · \[1 \+ μm\(t\)\]/);
   assert.match(amGuide, /Overmodulation/);
   assert.match(fmGuide, /fi\(t\) = fc \+ Δf · m\(t\)/);
@@ -817,6 +844,10 @@ test("educational documentation covers AM and FM as separate concepts", async ()
   assert.match(brazilianAmGuide, /\[Español\]\(\.\.\/es\/am\.md\)/);
   assert.match(brazilianFmGuide, /RDS em escala/);
   assert.match(brazilianFmGuide, /\[Español\]\(\.\.\/es\/fm\.md\)/);
+  assert.match(chineseAmGuide, /过调制/);
+  assert.match(chineseAmGuide, /\[Português \(Brasil\)\]\(\.\.\/pt-BR\/am\.md\)/);
+  assert.match(chineseFmGuide, /缩放 RDS/);
+  assert.match(chineseFmGuide, /\[Português \(Brasil\)\]\(\.\.\/pt-BR\/fm\.md\)/);
 });
 
 test("all relative documentation links point to existing files", async () => {
@@ -827,6 +858,7 @@ test("all relative documentation links point to existing files", async () => {
     new URL("../README.de.md", import.meta.url),
     new URL("../README.es.md", import.meta.url),
     new URL("../README.pt-BR.md", import.meta.url),
+    new URL("../README.zh-CN.md", import.meta.url),
     new URL("../docs/en/am.md", import.meta.url),
     new URL("../docs/en/fm.md", import.meta.url),
     new URL("../docs/pl/am.md", import.meta.url),
@@ -837,6 +869,8 @@ test("all relative documentation links point to existing files", async () => {
     new URL("../docs/es/fm.md", import.meta.url),
     new URL("../docs/pt-BR/am.md", import.meta.url),
     new URL("../docs/pt-BR/fm.md", import.meta.url),
+    new URL("../docs/zh-CN/am.md", import.meta.url),
+    new URL("../docs/zh-CN/fm.md", import.meta.url),
   ];
   for (const documentUrl of documents) {
     const markdown = await readFile(documentUrl, "utf8");

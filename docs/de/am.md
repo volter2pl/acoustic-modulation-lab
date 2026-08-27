@@ -1,7 +1,8 @@
 # Amplitudenmodulation
 
 **Sprache:** [English](../en/am.md) | [Polski](../pl/am.md) | Deutsch |
-[Español](../es/am.md) | [Português (Brasil)](../pt-BR/am.md)
+[Español](../es/am.md) | [Português (Brasil)](../pt-BR/am.md) |
+[简体中文](../zh-CN/am.md)
 
 [Zurück zur Übersicht des Labors](../../README.de.md)
 

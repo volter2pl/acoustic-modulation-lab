@@ -1,7 +1,8 @@
 # Modulacja amplitudy
 
 **Język:** [English](../en/am.md) | Polski | [Deutsch](../de/am.md) |
-[Español](../es/am.md) | [Português (Brasil)](../pt-BR/am.md)
+[Español](../es/am.md) | [Português (Brasil)](../pt-BR/am.md) |
+[简体中文](../zh-CN/am.md)
 
 [Powrót do opisu laboratorium](../../README.pl.md)
 

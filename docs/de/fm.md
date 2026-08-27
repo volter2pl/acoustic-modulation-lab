@@ -1,7 +1,8 @@
 # Frequenzmodulation und RDS
 
 **Sprache:** [English](../en/fm.md) | [Polski](../pl/fm.md) | Deutsch |
-[Español](../es/fm.md) | [Português (Brasil)](../pt-BR/fm.md)
+[Español](../es/fm.md) | [Português (Brasil)](../pt-BR/fm.md) |
+[简体中文](../zh-CN/fm.md)
 
 [Zurück zur Übersicht des Labors](../../README.de.md)
 

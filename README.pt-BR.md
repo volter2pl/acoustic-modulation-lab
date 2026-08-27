@@ -1,7 +1,8 @@
 # Laboratório de Modulação Acústica
 
 **Idioma:** [English](README.md) | [Polski](README.pl.md) |
-[Deutsch](README.de.md) | [Español](README.es.md) | Português (Brasil)
+[Deutsch](README.de.md) | [Español](README.es.md) | Português (Brasil) |
+[简体中文](README.zh-CN.md)
 
 **O Laboratório de Modulação Acústica torna os princípios do rádio AM e FM
 visíveis e audíveis diretamente em um navegador comum.**
@@ -12,6 +13,7 @@ portadora acústica armazenada como um sinal de áudio com taxa de amostragem de
 das bandas laterais, da sintonia e da demodulação permanecem os mesmos.
 
 [Abrir o laboratório em Português (Brasil)](https://volter2pl.github.io/acoustic-modulation-lab/?lang=pt-BR)
+· [简体中文](https://volter2pl.github.io/acoustic-modulation-lab/?lang=zh-CN)
 
 ```text
 voz ou música
