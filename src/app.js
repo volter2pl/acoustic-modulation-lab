@@ -6,6 +6,14 @@ import {
   demodulateFMComposite,
 } from "./fm-demodulator.js";
 import { modulateFM } from "./fm-modulator.js";
+import { LiveRadioReceiver } from "./live-radio-receiver.js";
+import {
+  createRadioBand,
+  RADIO_BAND_DEVIATION,
+  RADIO_BAND_MESSAGE_BANDWIDTH,
+  RADIO_STATION_CARRIERS,
+  receiveRadioStation,
+} from "./radio-channel.js";
 import { MicrophoneRecorder } from "./recorder.js";
 import {
   createRdsComposite,
@@ -36,6 +44,10 @@ export class AcousticFmApp {
       decodedBlob: null,
       busy: false,
       operation: null,
+      experimentMode: "single",
+      bandStations: RADIO_STATION_CARRIERS.map(() => null),
+      bandRevision: 0,
+      receiverSnapshotCarrier: null,
       rdsMode: RDS_MODES.NONE,
       carrierWithoutRds: 18000,
       rdsTexts: {
@@ -44,26 +56,43 @@ export class AcousticFmApp {
       },
     };
     this.recorder = new MicrophoneRecorder();
-    this.ui = new AppUI(AUDIO_EXAMPLES, {
-      onSourceFile: (file) => this.loadSource(file, file.name),
-      onExample: (example) => this.loadExample(example),
-      onFmFile: (file) => this.loadExternalFm(file, file.name),
-      onEncode: () => this.encodeSource(),
-      onDecode: () => this.decodeFm(),
-      onParametersChanged: () => this.parametersChanged(),
-      onRdsModeChanged: (mode) => this.rdsModeChanged(mode),
-      onRdsTextChanged: (text) => this.rdsTextChanged(text),
-      onToggleRecording: () => this.toggleRecording(),
-      onShowSourceChooser: () => this.ui.showSourceChooser(Boolean(this.state.source)),
-      onCancelSourceChooser: () => this.ui.hideSourceChooser(),
-      onInvalidDrop: () => this.ui.setStatus("The dropped file is not a supported audio file."),
-      onDownloadFm: () => downloadBlob(this.state.fmBlob, "acoustic-fm.wav"),
-      onDownloadResult: () =>
-        downloadBlob(this.state.decodedBlob, "acoustic-fm-decoded.wav"),
+    this.ui = new AppUI(
+      AUDIO_EXAMPLES,
+      {
+        onSourceFile: (file) => this.loadSource(file, file.name),
+        onExample: (example) => this.loadExample(example),
+        onFmFile: (file) => this.loadExternalFm(file, file.name),
+        onEncode: () => this.encodeSource(),
+        onDecode: () => this.decodeFm(),
+        onParametersChanged: () => this.parametersChanged(),
+        onModeChanged: (mode) => this.modeChanged(mode),
+        onBandExample: (index, example) => this.loadBandExample(index, example),
+        onBandFile: (index, file) =>
+          this.loadBandStation(index, file, file.name, "custom"),
+        onBandLevelChanged: () => this.bandParametersChanged(),
+        onReceiverTuningChanged: () => this.receiverTuningChanged(),
+        onToggleLiveReceiver: () => this.toggleLiveReceiver(),
+        onSeekLiveReceiver: (progress) => this.seekLiveReceiver(progress),
+        onRdsModeChanged: (mode) => this.rdsModeChanged(mode),
+        onRdsTextChanged: (text) => this.rdsTextChanged(text),
+        onToggleRecording: () => this.toggleRecording(),
+        onShowSourceChooser: () => this.ui.showSourceChooser(Boolean(this.state.source)),
+        onCancelSourceChooser: () => this.ui.hideSourceChooser(),
+        onInvalidDrop: () =>
+          this.ui.setStatus("The dropped file is not a supported audio file."),
+        onDownloadFm: () => downloadBlob(this.state.fmBlob, "acoustic-fm.wav"),
+        onDownloadResult: () =>
+          downloadBlob(this.state.decodedBlob, "acoustic-fm-decoded.wav"),
+      },
+      { carriers: RADIO_STATION_CARRIERS },
+    );
+    this.liveReceiver = new LiveRadioReceiver({
+      onStateChanged: (receiverState) => this.ui.renderLiveReceiver(receiverState),
     });
   }
 
   start() {
+    this.ui.setExperimentMode(this.state.experimentMode);
     this.updateCarrierLimits();
     this.renderControls();
   }
@@ -72,8 +101,18 @@ export class AcousticFmApp {
     return this.ui.getParameters();
   }
 
+  isBandMode() {
+    return this.state.experimentMode === "band";
+  }
+
   getCurrentSampleRate() {
-    return this.state.fm?.sampleRate || this.state.source?.sampleRate || 48000;
+    return (
+      this.state.fm?.sampleRate ||
+      (this.isBandMode()
+        ? this.state.bandStations.find(Boolean)?.audioBuffer.sampleRate
+        : this.state.source?.sampleRate) ||
+      48000
+    );
   }
 
   getRdsConfig() {
@@ -105,6 +144,19 @@ export class AcousticFmApp {
   }
 
   validateParameters(sampleRate = this.getCurrentSampleRate()) {
+    if (this.isBandMode()) {
+      const tunedCarrier = this.ui.getReceiverCarrier();
+      const occupiedHalfBandwidth =
+        RADIO_BAND_DEVIATION + RADIO_BAND_MESSAGE_BANDWIDTH;
+      if (
+        tunedCarrier - occupiedHalfBandwidth < 150 ||
+        tunedCarrier + occupiedHalfBandwidth > sampleRate / 2 - 500
+      ) {
+        return "The receiver bandwidth extends outside the valid frequency range.";
+      }
+      return null;
+    }
+
     const { carrier, deviation } = this.getParameters();
     const nyquist = sampleRate / 2;
     const occupiedHalfBandwidth = deviation + this.getMessageBandwidth();
@@ -122,7 +174,18 @@ export class AcousticFmApp {
   }
 
   isGeneratedSignalStale() {
-    if (this.state.fmOrigin !== "generated" || !this.state.fmParameters) return false;
+    if (!this.state.fmOrigin?.startsWith("generated") || !this.state.fmParameters) {
+      return false;
+    }
+    if (this.isBandMode()) {
+      const levels = this.ui.getBandLevels();
+      return (
+        this.state.fmOrigin !== "generated-band" ||
+        this.state.fmParameters.bandRevision !== this.state.bandRevision ||
+        levels.some((level, index) => this.state.fmParameters.levels[index] !== level)
+      );
+    }
+    if (this.state.fmOrigin !== "generated-single") return true;
     const { carrier, deviation } = this.getParameters();
     const { mode, text } = this.getRdsConfig();
     return (
@@ -135,8 +198,11 @@ export class AcousticFmApp {
 
   renderControls() {
     this.ui.renderControls({
+      mode: this.state.experimentMode,
       warning: this.validateParameters(),
-      sourceReady: Boolean(this.state.source),
+      sourceReady: this.isBandMode()
+        ? this.state.bandStations.every(Boolean)
+        : Boolean(this.state.source),
       fmReady: Boolean(this.state.fm),
       stale: this.isGeneratedSignalStale(),
       busy: this.state.busy,
@@ -153,12 +219,19 @@ export class AcousticFmApp {
   }
 
   clearDecoded() {
+    this.liveReceiver?.stop();
     this.state.decodedBlob = null;
+    this.state.receiverSnapshotCarrier = null;
     this.ui.clearResult();
   }
 
   clearGeneratedFm() {
-    if (this.state.fmOrigin !== "generated") return;
+    if (!this.state.fmOrigin?.startsWith("generated")) return;
+    this.clearFm();
+  }
+
+  clearFm() {
+    this.liveReceiver?.clear();
     this.state.fm = null;
     this.state.fmBlob = null;
     this.state.fmOrigin = null;
@@ -198,6 +271,113 @@ export class AcousticFmApp {
     }
   }
 
+  async modeChanged(mode) {
+    if (mode === this.state.experimentMode || this.state.busy) return;
+    this.state.experimentMode = mode;
+    this.clearFm();
+    this.ui.setExperimentMode(mode);
+    this.updateCarrierLimits();
+    this.renderControls();
+
+    if (mode === "band" && !this.state.bandStations.every(Boolean)) {
+      await this.loadBandDefaults();
+    }
+  }
+
+  async loadBandDefaults() {
+    this.ui.setStatus("Loading radio stations…", "info");
+    this.setBusy(true, "load");
+
+    try {
+      const stations = await Promise.all(
+        RADIO_STATION_CARRIERS.map(async (_, index) => {
+          const example = AUDIO_EXAMPLES[index % AUDIO_EXAMPLES.length];
+          const response = await fetch(example.src);
+          if (!response.ok) {
+            throw new Error(`Could not load ${example.title} (${response.status}).`);
+          }
+          const blob = await response.blob();
+          const audioBuffer = await decodeAudioBlob(blob);
+          return { audioBuffer, blob, name: example.title, sourceId: example.id };
+        }),
+      );
+      this.state.bandStations = stations;
+      stations.forEach((station, index) => {
+        this.ui.setBandStation(index, {
+          name: station.name,
+          meta: describeAudio(station.audioBuffer),
+          sourceId: station.sourceId,
+        });
+      });
+      this.ui.setStatus();
+    } catch (error) {
+      this.ui.setStatus(
+        error instanceof Error ? error.message : "Could not load the radio stations.",
+      );
+    } finally {
+      this.setBusy(false);
+    }
+  }
+
+  async loadBandExample(index, example) {
+    if (this.state.busy) return;
+    this.ui.setStatus(`Loading ${example.title}…`, "info");
+    this.setBusy(true, "load");
+
+    try {
+      const response = await fetch(example.src);
+      if (!response.ok) throw new Error(`Could not load the sample (${response.status}).`);
+      await this.storeBandStation(index, await response.blob(), example.title, example.id);
+      this.ui.setStatus();
+    } catch (error) {
+      this.restoreBandStationControl(index);
+      this.ui.setStatus(
+        error instanceof Error ? error.message : "Could not load the station programme.",
+      );
+    } finally {
+      this.setBusy(false);
+    }
+  }
+
+  async loadBandStation(index, blob, name, sourceId) {
+    if (this.state.busy) return;
+    this.ui.setStatus(`Loading ${name}…`, "info");
+    this.setBusy(true, "load");
+    try {
+      await this.storeBandStation(index, blob, name, sourceId);
+      this.ui.setStatus();
+    } catch (error) {
+      this.restoreBandStationControl(index);
+      this.ui.setStatus(
+        error instanceof Error ? error.message : "Could not load the station programme.",
+      );
+    } finally {
+      this.setBusy(false);
+    }
+  }
+
+  async storeBandStation(index, blob, name, sourceId) {
+    const audioBuffer = await decodeAudioBlob(blob);
+    this.clearGeneratedFm();
+    this.state.bandStations[index] = { audioBuffer, blob, name, sourceId };
+    this.state.bandRevision += 1;
+    this.ui.setBandStation(index, {
+      name,
+      meta: describeAudio(audioBuffer),
+      sourceId,
+    });
+  }
+
+  restoreBandStationControl(index) {
+    const station = this.state.bandStations[index];
+    if (!station) return;
+    this.ui.setBandStation(index, {
+      name: station.name,
+      meta: describeAudio(station.audioBuffer),
+      sourceId: station.sourceId,
+    });
+  }
+
   async loadExternalFm(blob, name) {
     this.ui.setStatus();
     this.setBusy(true, "load");
@@ -213,6 +393,10 @@ export class AcousticFmApp {
       this.state.fmOrigin = "uploaded";
       this.state.fmParameters = null;
       this.clearDecoded();
+      if (this.isBandMode()) {
+        this.liveReceiver.setSignal(this.state.fm.samples, this.state.fm.sampleRate);
+        this.liveReceiver.setCarrier(this.ui.getReceiverCarrier());
+      }
       await this.ui.showFm({
         blob,
         name,
@@ -227,6 +411,7 @@ export class AcousticFmApp {
   }
 
   async encodeSource() {
+    if (this.isBandMode()) return this.encodeRadioBand();
     if (!this.state.source || this.state.busy) return;
     const { carrier, deviation } = this.getParameters();
     const rds = this.getRdsConfig();
@@ -255,7 +440,7 @@ export class AcousticFmApp {
         duration: samples.length / this.state.source.sampleRate,
       };
       this.state.fmBlob = blob;
-      this.state.fmOrigin = "generated";
+      this.state.fmOrigin = "generated-single";
       this.state.fmParameters = {
         carrier,
         deviation,
@@ -277,6 +462,56 @@ export class AcousticFmApp {
     }
   }
 
+  async encodeRadioBand() {
+    if (!this.state.bandStations.every(Boolean) || this.state.busy) return;
+    const sampleRate = this.state.bandStations[0].audioBuffer.sampleRate;
+    if (
+      this.state.bandStations.some(
+        ({ audioBuffer }) => audioBuffer.sampleRate !== sampleRate,
+      )
+    ) {
+      return this.ui.setStatus("All station programmes must use the same sample rate.");
+    }
+
+    this.ui.setStatus();
+    this.setBusy(true, "encode");
+    await this.yieldToBrowser();
+
+    try {
+      const messages = this.state.bandStations.map(({ audioBuffer }) =>
+        prepareMessage(audioBuffer, RADIO_BAND_MESSAGE_BANDWIDTH, 8),
+      );
+      const levels = this.ui.getBandLevels();
+      const samples = createRadioBand(messages, sampleRate, { levels });
+      const blob = createWavBlob(samples, sampleRate);
+      this.state.fm = {
+        samples,
+        sampleRate,
+        duration: samples.length / sampleRate,
+      };
+      this.state.fmBlob = blob;
+      this.state.fmOrigin = "generated-band";
+      this.state.fmParameters = {
+        bandRevision: this.state.bandRevision,
+        levels: [...levels],
+      };
+      this.clearDecoded();
+      this.liveReceiver.setSignal(samples, sampleRate);
+      this.liveReceiver.setCarrier(this.ui.getReceiverCarrier());
+
+      await this.ui.showFm({
+        blob,
+        name: "Three-station radio band",
+        meta: `${this.describeMonoSignal(this.state.fm)} · 3 stations`,
+        origin: "Generated",
+      });
+    } catch (error) {
+      this.ui.setStatus(error instanceof Error ? error.message : "Could not build the radio band.");
+    } finally {
+      this.setBusy(false);
+    }
+  }
+
   async decodeFm() {
     if (!this.state.fm || this.state.busy) return;
     const { carrier, deviation } = this.getParameters();
@@ -291,7 +526,18 @@ export class AcousticFmApp {
     try {
       let samples;
       let decodedRds = null;
-      if (rds.mode === RDS_MODES.NONE) {
+      let resultName = "Recovered message";
+      let snapshotCarrier = null;
+      if (this.isBandMode()) {
+        const tunedCarrier = this.ui.getReceiverCarrier();
+        samples = receiveRadioStation(
+          this.state.fm.samples,
+          this.state.fm.sampleRate,
+          tunedCarrier,
+        );
+        resultName = this.describeTunedStation(tunedCarrier);
+        snapshotCarrier = tunedCarrier;
+      } else if (rds.mode === RDS_MODES.NONE) {
         samples = demodulateFM(
           this.state.fm.samples,
           this.state.fm.sampleRate,
@@ -312,6 +558,7 @@ export class AcousticFmApp {
       }
       const blob = createWavBlob(samples, this.state.fm.sampleRate);
       this.state.decodedBlob = blob;
+      this.state.receiverSnapshotCarrier = snapshotCarrier;
       await this.ui.showResult({
         blob,
         meta: this.describeMonoSignal({
@@ -319,8 +566,11 @@ export class AcousticFmApp {
           sampleRate: this.state.fm.sampleRate,
         }),
         rds: decodedRds,
-        rdsExpected: rds.mode !== RDS_MODES.NONE,
+        rdsExpected: !this.isBandMode() && rds.mode !== RDS_MODES.NONE,
+        name: resultName,
+        snapshotCarrier,
       });
+      if (this.isBandMode()) this.ui.renderLiveReceiver(this.liveReceiver.getState());
     } catch (error) {
       this.ui.setStatus(error instanceof Error ? error.message : "Could not decode the FM signal.");
     } finally {
@@ -332,6 +582,63 @@ export class AcousticFmApp {
     this.clearDecoded();
     this.updateCarrierLimits();
     this.renderControls();
+  }
+
+  bandParametersChanged() {
+    this.clearDecoded();
+    this.renderControls();
+  }
+
+  receiverTuningChanged() {
+    const carrier = this.ui.getReceiverCarrier();
+    this.liveReceiver.setCarrier(carrier);
+    this.ui.updateResultName(this.describeTunedStation(carrier));
+    this.ui.renderResultSnapshot(this.state.receiverSnapshotCarrier, carrier);
+    this.renderControls();
+  }
+
+  async toggleLiveReceiver() {
+    if (!this.isBandMode() || !this.state.fm || this.state.busy) return;
+    this.ui.setStatus();
+    try {
+      this.liveReceiver.setCarrier(this.ui.getReceiverCarrier());
+      await this.liveReceiver.toggle();
+    } catch (error) {
+      this.ui.setStatus(
+        error instanceof Error ? error.message : "Could not start the live receiver.",
+      );
+    }
+  }
+
+  async seekLiveReceiver(progress) {
+    if (!this.isBandMode() || !this.state.fm) return;
+    try {
+      await this.liveReceiver.seek(progress);
+    } catch (error) {
+      this.ui.setStatus(
+        error instanceof Error ? error.message : "Could not seek the live receiver.",
+      );
+    }
+  }
+
+  describeTunedStation(tunedCarrier) {
+    const nearestIndex = RADIO_STATION_CARRIERS.reduce(
+      (bestIndex, stationCarrier, index) =>
+        Math.abs(stationCarrier - tunedCarrier) <
+        Math.abs(RADIO_STATION_CARRIERS[bestIndex] - tunedCarrier)
+          ? index
+          : bestIndex,
+      0,
+    );
+    const distance = Math.abs(RADIO_STATION_CARRIERS[nearestIndex] - tunedCarrier);
+    if (this.state.fmOrigin === "generated-band" && distance <= 500) {
+      return `${this.state.bandStations[nearestIndex]?.name ?? "Station"} · ${(
+        tunedCarrier / 1000
+      ).toFixed(1)} kHz`;
+    }
+    return `${distance <= 500 ? "Tuned frequency" : "Between stations"} · ${(
+      tunedCarrier / 1000
+    ).toFixed(1)} kHz`;
   }
 
   rdsModeChanged(mode) {

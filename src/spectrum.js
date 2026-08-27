@@ -44,10 +44,17 @@ export class SpectrumPlayer {
     this.height = height;
     this.waveSurfer = null;
     this.volume = volume;
+    this.externalPlayback = null;
     this.audio = this.createAudio();
 
     this.container.addEventListener("click", (event) => this.seek(event));
-    this.playButton.addEventListener("click", () => this.toggle());
+    this.playButton.addEventListener("click", () => {
+      if (this.externalPlayback) {
+        this.externalPlayback.toggle();
+      } else {
+        this.toggle();
+      }
+    });
   }
 
   createAudio() {
@@ -124,11 +131,34 @@ export class SpectrumPlayer {
   }
 
   seek(event) {
-    if (!Number.isFinite(this.audio.duration) || this.audio.duration <= 0) return;
     const bounds = this.container.getBoundingClientRect();
     const position = (event.clientX - bounds.left) / Math.max(1, bounds.width);
-    this.audio.currentTime = Math.max(0, Math.min(1, position)) * this.audio.duration;
+    const progress = Math.max(0, Math.min(1, position));
+    if (this.externalPlayback) {
+      this.externalPlayback.seek(progress);
+      return;
+    }
+    if (!Number.isFinite(this.audio.duration) || this.audio.duration <= 0) return;
+    this.audio.currentTime = progress * this.audio.duration;
     this.renderTime();
+  }
+
+  setExternalPlayback(handlers = null) {
+    this.audio.pause();
+    this.externalPlayback = handlers;
+    if (!handlers) {
+      this.renderPlaybackState();
+      this.renderTime();
+    }
+  }
+
+  renderExternalPlayback({ playing, currentTime, duration }) {
+    if (!this.externalPlayback) return;
+    this.playButton.textContent = playing ? "Ⅱ" : "▶";
+    this.playButton.setAttribute("aria-label", playing ? "Pause live receiver" : "Play live receiver");
+    this.timeElement.textContent = `${formatDuration(currentTime)} / ${formatDuration(duration)}`;
+    const progress = Number.isFinite(duration) && duration > 0 ? currentTime / duration : 0;
+    this.playhead.style.left = `${Math.max(0, Math.min(1, progress)) * 100}%`;
   }
 
   stop() {
@@ -138,12 +168,14 @@ export class SpectrumPlayer {
   }
 
   renderPlaybackState() {
+    if (this.externalPlayback) return;
     const playing = !this.audio.paused && !this.audio.ended;
     this.playButton.textContent = playing ? "Ⅱ" : "▶";
     this.playButton.setAttribute("aria-label", playing ? "Pause playback" : "Play");
   }
 
   renderTime() {
+    if (this.externalPlayback) return;
     this.timeElement.textContent = `${formatDuration(this.audio.currentTime)} / ${formatDuration(
       this.audio.duration,
     )}`;

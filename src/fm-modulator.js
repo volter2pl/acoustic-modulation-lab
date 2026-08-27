@@ -9,28 +9,41 @@
  * Computing sin(2π * f_i[n] * time) independently for every sample would create
  * phase discontinuities and would not be a correct FM modulator.
  */
+export class FmOscillator {
+  constructor(sampleRate, carrier, deviation, amplitude = 0.72) {
+    if (sampleRate <= 0 || carrier <= 0 || deviation <= 0) {
+      throw new RangeError("Modulation parameters must be positive.");
+    }
+    if (carrier + deviation >= sampleRate / 2) {
+      throw new RangeError("The instantaneous frequency exceeds the Nyquist limit.");
+    }
+
+    this.carrier = carrier;
+    this.deviation = deviation;
+    this.amplitude = amplitude;
+    this.phaseScale = (2 * Math.PI) / sampleRate;
+    this.phase = 0;
+  }
+
+  process(messageSample) {
+    const sample = Math.max(-1, Math.min(1, messageSample));
+    const instantaneousFrequency = this.carrier + this.deviation * sample;
+    this.phase += this.phaseScale * instantaneousFrequency;
+    if (this.phase > Math.PI * 2) this.phase %= Math.PI * 2;
+    return this.amplitude * Math.sin(this.phase);
+  }
+}
+
 export function modulateFM(message, sampleRate, carrier, deviation, amplitude = 0.72) {
   if (!(message instanceof Float32Array)) {
     throw new TypeError("The message must be a Float32Array.");
   }
-  if (sampleRate <= 0 || carrier <= 0 || deviation <= 0) {
-    throw new RangeError("Modulation parameters must be positive.");
-  }
-  if (carrier + deviation >= sampleRate / 2) {
-    throw new RangeError("The instantaneous frequency exceeds the Nyquist limit.");
-  }
 
   const output = new Float32Array(message.length);
-  const phaseScale = (2 * Math.PI) / sampleRate;
-  let phase = 0;
+  const oscillator = new FmOscillator(sampleRate, carrier, deviation, amplitude);
 
   for (let index = 0; index < message.length; index += 1) {
-    const sample = Math.max(-1, Math.min(1, message[index]));
-    const instantaneousFrequency = carrier + deviation * sample;
-    phase += phaseScale * instantaneousFrequency;
-
-    if (phase > Math.PI * 2) phase %= Math.PI * 2;
-    output[index] = amplitude * Math.sin(phase);
+    output[index] = oscillator.process(message[index]);
   }
 
   return output;

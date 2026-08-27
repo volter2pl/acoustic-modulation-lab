@@ -216,6 +216,53 @@ This is a scaled educational implementation, not a waveform that a commercial
 RDS radio can receive. The lower clock frequencies make the multiplex visible,
 audible, and representable in an ordinary browser audio file.
 
+## Several stations in one radio band
+
+The **Radio band** mode demonstrates frequency-division multiplexing. Three
+independent recordings frequency-modulate carriers at 5, 12, and 19 kHz. Their
+FM waveforms are reduced in level and added into one audio file:
+
+```text
+5 kHz station  ─┐
+12 kHz station ─┼─→ one acoustic radio band
+19 kHz station ─┘
+```
+
+Each station uses ±0.75 kHz deviation and a 2 kHz programme band. The resulting
+estimated channel width is about 5.5 kHz, leaving separation between adjacent
+stations. A common 48 kHz file can therefore hold all three without crossing
+the 24 kHz Nyquist limit.
+
+The receiver has its own tuning control. Mixing the shared channel with the
+selected carrier moves that station to baseband, while the receiver low-pass
+rejects stations that remain several kilohertz away. Preset buttons tune to the
+exact carriers, and the continuous slider also makes it possible to explore
+what happens between stations.
+
+The recovered-audio play button starts a live receiver implemented on the
+browser's audio thread. While the common radio-band timeline keeps running,
+moving **Receiver tuning** immediately changes the local oscillator and therefore
+the station you hear. This is intentionally different from decoding a separate
+file after every slider movement: it behaves like turning the dial of a radio.
+
+The spectrogram and downloadable recovered WAV are still offline analysis
+results, because rendering an entire time-frequency image requires a complete
+signal. **Update spectrum & WAV** captures that result at the currently tuned
+frequency. If the dial is moved afterward, the live audio follows it immediately
+and the interface labels the existing spectrum with the frequency of its last
+snapshot until it is updated.
+
+Programmes do not need equal durations. The shared file follows the longest
+recording. When a shorter programme ends, its modulating message becomes zero,
+so that transmitter continues as an unmodulated carrier rather than vanishing
+from the spectrum. Individual level controls change received station strength,
+while the mixer reserves enough headroom to avoid clipping when all stations
+peak together.
+
+RDS is disabled in Radio band mode. In this 1:8 model, one RDS station occupies
+approximately 17.2 kHz and multiple such stations would not fit honestly in a
+48 kHz audio channel. RDS remains available in the Single station experiment.
+
 ## From a file experiment to a real channel
 
 The file-to-file path proves that the modulator and receiver agree mathematically.
@@ -240,7 +287,7 @@ algorithm is wrong; the acoustic channel may have removed the carrier.
 
 ## Try the experiment
 
-Use the included sample, drop an audio file, or record your voice. The browser
+Use the included samples, drop an audio file, or record your voice. The browser
 usually accepts WAV, MP3, M4A/AAC, OGG/Vorbis, and WebM/Opus, although exact
 support varies. The maximum input length is currently 120 seconds.
 

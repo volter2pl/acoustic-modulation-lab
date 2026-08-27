@@ -31,16 +31,24 @@
     <main>
       <div id="app-status" class="app-status" role="status" aria-live="polite" hidden></div>
 
+      <div class="experiment-switch" role="group" aria-label="Experiment mode">
+        <button id="mode-single" class="is-active" type="button" aria-pressed="true">
+          Single station
+        </button>
+        <button id="mode-band" type="button" aria-pressed="false">Radio band</button>
+      </div>
+
       <section class="signal-flow" aria-label="FM encoding and decoding">
         <article class="stage-card" id="source-card">
           <header class="stage-header">
             <span class="step-number">1</span>
             <div>
               <p class="eyebrow">INPUT</p>
-              <h1>Message</h1>
+              <h1 id="source-title">Message</h1>
             </div>
           </header>
 
+          <div id="single-source">
           <div id="source-chooser">
             <div id="source-dropzone" class="dropzone" tabindex="0" role="button">
               <div class="drop-icon" aria-hidden="true">＋</div>
@@ -90,6 +98,12 @@
               <span id="source-time" class="timecode">0:00 / 0:00</span>
             </div>
           </div>
+          </div>
+
+          <div id="band-source" hidden>
+            <div id="band-station-list" class="band-station-list"></div>
+            <p class="band-note">Shorter programmes continue as silent carriers.</p>
+          </div>
         </article>
 
         <div class="flow-arrow" aria-hidden="true">
@@ -101,12 +115,12 @@
             <span class="step-number">2</span>
             <div>
               <p class="eyebrow">MODULATION</p>
-              <h2>FM signal</h2>
+              <h2 id="fm-title">FM signal</h2>
             </div>
             <span id="fm-origin" class="state-badge" hidden></span>
           </header>
 
-          <div class="parameter-block">
+          <div id="single-controls" class="parameter-block">
             <label class="parameter-label" for="carrier">
               <span>Carrier</span>
               <output id="carrier-value">18.0 kHz</output>
@@ -148,6 +162,25 @@
               <input id="rds-text" type="text" maxlength="8" autocomplete="off" />
             </div>
             <p id="parameter-warning" class="inline-warning" hidden></p>
+          </div>
+
+          <div id="band-controls" class="parameter-block band-controls" hidden>
+            <div class="band-plan-row">
+              <span>Stations</span>
+              <strong>5.0 · 12.0 · 19.0 kHz</strong>
+            </div>
+            <div class="band-plan-row">
+              <span>Deviation</span>
+              <strong>±0.75 kHz</strong>
+            </div>
+            <div class="band-plan-row">
+              <span>Programme band</span>
+              <strong>2.0 kHz each</strong>
+            </div>
+            <div class="band-plan-row">
+              <span>RDS</span>
+              <strong>Off</strong>
+            </div>
           </div>
 
           <button id="encode-button" class="button button-primary button-wide" type="button" disabled>
@@ -194,23 +227,49 @@
             <span class="step-number">3</span>
             <div>
               <p class="eyebrow">DEMODULATION</p>
-              <h2>Recovered audio</h2>
+              <h2 id="result-title">Recovered audio</h2>
             </div>
           </header>
 
+          <div id="receiver-controls" class="receiver-controls" hidden>
+            <label class="parameter-label" for="receiver-carrier">
+              <span>Receiver tuning</span>
+              <output id="receiver-carrier-value">12.0 kHz</output>
+            </label>
+            <input
+              id="receiver-carrier"
+              type="range"
+              min="4000"
+              max="20000"
+              step="100"
+              value="12000"
+            />
+            <div class="tuner-presets" aria-label="Station presets">
+              <button type="button" data-carrier="5000">5.0</button>
+              <button type="button" data-carrier="12000" class="is-active">12.0</button>
+              <button type="button" data-carrier="19000">19.0 kHz</button>
+            </div>
+            <button id="tune-button" class="button button-accent button-wide" type="button" disabled>
+              Update spectrum &amp; WAV
+            </button>
+          </div>
+
           <div id="result-empty" class="result-empty">
             <div class="result-placeholder" aria-hidden="true">≈</div>
-            <strong>Your result will appear here</strong>
-            <span>Prepare an FM signal first</span>
+            <strong id="result-empty-title">Your result will appear here</strong>
+            <span id="result-empty-copy">Prepare an FM signal first</span>
           </div>
 
           <div id="result-loaded" class="loaded-content result-loaded" hidden>
             <div class="file-row">
               <div class="file-copy">
-                <strong>Recovered message</strong>
+                <strong id="result-name">Recovered message</strong>
                 <span id="result-meta">—</span>
               </div>
-              <span class="state-badge success-badge">Ready</span>
+              <div class="result-state-labels">
+                <span id="result-spectrum-state" class="snapshot-label" hidden></span>
+                <span id="result-ready-state" class="state-badge success-badge">Ready</span>
+              </div>
             </div>
             <div id="result-rds" class="rds-result" hidden>
               <span id="result-rds-mode" class="rds-result-mode">PS</span>

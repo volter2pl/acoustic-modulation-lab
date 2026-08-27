@@ -130,6 +130,38 @@ main {
   background: rgb(140 124 255 / 8%);
 }
 
+.experiment-switch {
+  display: inline-flex;
+  margin-bottom: 16px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.experiment-switch button {
+  min-height: 32px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 680;
+}
+
+.experiment-switch button.is-active {
+  color: var(--text);
+  background: var(--surface-raised);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 24%);
+}
+
+.experiment-switch button:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
 .signal-flow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 50px minmax(0, 1.06fr) 50px minmax(0, 1fr);
@@ -363,6 +395,92 @@ main {
 .chooser-cancel {
   display: block;
   margin: 10px auto 0;
+}
+
+.band-station-list {
+  display: grid;
+  gap: 10px;
+}
+
+.band-station {
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.band-station-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.station-frequency {
+  min-width: 54px;
+  color: var(--primary-bright);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.band-station select {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface-raised);
+  font-size: 10px;
+}
+
+.station-source-meta {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 10px 0 8px;
+}
+
+.station-source-meta strong {
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 640;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.station-source-meta span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.station-level {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.station-level output {
+  color: var(--muted-strong);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.station-level input[type="range"] {
+  grid-column: 1 / -1;
+  margin: 3px 0 0;
+}
+
+.band-note {
+  margin: 12px 2px 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
 }
 
 .button {
@@ -624,6 +742,26 @@ main {
   background: var(--surface-soft);
 }
 
+.band-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.band-plan-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.band-plan-row strong {
+  color: #f4c79e;
+  font-size: 10px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
 .parameter-label {
   display: flex;
   align-items: baseline;
@@ -774,6 +912,25 @@ input[type="range"] {
   font-size: 9px;
 }
 
+.result-state-labels {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
+}
+
+.snapshot-label {
+  color: #a9efd4;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.snapshot-label.is-stale {
+  color: #f4c79e;
+}
+
 .result-empty {
   display: flex;
   min-height: 400px;
@@ -782,6 +939,47 @@ input[type="range"] {
   justify-content: center;
   color: var(--muted-strong);
   text-align: center;
+}
+
+.receiver-controls {
+  margin-bottom: 16px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface-soft);
+}
+
+.receiver-controls input[type="range"] {
+  margin-bottom: 11px;
+  accent-color: var(--result);
+}
+
+.tuner-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.tuner-presets button {
+  min-height: 29px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--muted);
+  background: var(--surface-raised);
+  cursor: pointer;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tuner-presets button.is-active {
+  border-color: rgb(97 213 167 / 42%);
+  color: #a9efd4;
+  background: rgb(97 213 167 / 8%);
+}
+
+.receiver-controls .button-accent {
+  margin-top: 12px;
+  background: var(--result);
 }
 
 .result-placeholder {

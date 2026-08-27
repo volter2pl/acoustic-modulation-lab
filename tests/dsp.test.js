@@ -5,6 +5,11 @@ import { demodulateFM, demodulateFMComposite } from "../src/fm-demodulator.js";
 import { AUDIO_EXAMPLES } from "../src/examples.js";
 import { modulateFM } from "../src/fm-modulator.js";
 import {
+  createRadioBand,
+  RADIO_STATION_CARRIERS,
+  receiveRadioStation,
+} from "../src/radio-channel.js";
+import {
   createRdsComposite,
   decodeRdsComposite,
   RDS_BASEBAND_BANDWIDTH,
@@ -14,6 +19,7 @@ import {
 } from "../src/rds.js";
 import { encodeWav } from "../src/wav.js";
 import { SpectrumPlayer } from "../src/spectrum.js";
+import { StreamingFmReceiver } from "../src/streaming-fm-receiver.js";
 
 function correlation(first, second, offset = 0, lag = 0) {
   const length = Math.min(first.length, second.length) - offset - Math.abs(lag);
@@ -86,6 +92,76 @@ test("the modulator keeps its output amplitude bounded", () => {
   const encoded = modulateFM(input, 48000, 10000, 1000, 0.72);
   assert.equal(encoded.length, input.length);
   assert.ok(encoded.every((sample) => Math.abs(sample) <= 0.720001));
+});
+
+test("one radio band carries three independently tunable FM stations", () => {
+  const sampleRate = 48000;
+  const frequencies = [300, 700, 1300];
+  const messages = frequencies.map((frequency) =>
+    Float32Array.from(
+      { length: sampleRate * 2 },
+      (_, index) => 0.7 * Math.sin((2 * Math.PI * frequency * index) / sampleRate),
+    ),
+  );
+  const band = createRadioBand(messages, sampleRate);
+
+  frequencies.forEach((frequency, stationIndex) => {
+    const received = receiveRadioStation(
+      band,
+      sampleRate,
+      RADIO_STATION_CARRIERS[stationIndex],
+    );
+    const wanted = toneAmplitude(received, sampleRate, frequency, 0.1, 1.9);
+    const unwanted = frequencies
+      .filter((_, index) => index !== stationIndex)
+      .map((otherFrequency) =>
+        toneAmplitude(received, sampleRate, otherFrequency, 0.1, 1.9),
+      );
+
+    assert.ok(wanted > 0.9);
+    assert.ok(unwanted.every((level) => level < 0.001));
+  });
+});
+
+test("a streaming receiver changes stations without restarting the radio band", () => {
+  const sampleRate = 48000;
+  const frequencies = [300, 700, 1300];
+  const messages = frequencies.map((frequency) =>
+    Float32Array.from(
+      { length: sampleRate * 2 },
+      (_, index) => 0.7 * Math.sin((2 * Math.PI * frequency * index) / sampleRate),
+    ),
+  );
+  const band = createRadioBand(messages, sampleRate);
+  const receiver = new StreamingFmReceiver(
+    sampleRate,
+    RADIO_STATION_CARRIERS[0],
+    750,
+    2000,
+  );
+  const output = new Float32Array(band.length);
+
+  for (let index = 0; index < band.length; index += 1) {
+    if (index === sampleRate) receiver.setCarrier(RADIO_STATION_CARRIERS[1]);
+    output[index] = receiver.process(band[index]);
+  }
+
+  assert.ok(toneAmplitude(output, sampleRate, frequencies[0], 0.15, 0.85) > 0.6);
+  assert.ok(toneAmplitude(output, sampleRate, frequencies[1], 0.15, 0.85) < 0.001);
+  assert.ok(toneAmplitude(output, sampleRate, frequencies[1], 1.15, 1.85) > 0.6);
+  assert.ok(toneAmplitude(output, sampleRate, frequencies[0], 1.15, 1.85) < 0.001);
+});
+
+test("a radio band follows the longest programme and remains below clipping", () => {
+  const messages = [
+    new Float32Array(12000).fill(0.5),
+    new Float32Array(24000).fill(-0.5),
+    new Float32Array(36000),
+  ];
+  const band = createRadioBand(messages, 48000);
+
+  assert.equal(band.length, 36000);
+  assert.ok(band.every((sample) => Math.abs(sample) <= 0.780001));
 });
 
 test("scaled RDS recovers an eight-character Programme Service name", () => {
@@ -274,6 +350,73 @@ test("reloading a spectrum preserves the new audio source", async () => {
   }
 });
 
+test("a spectrum player can delegate playback and seeking to a live receiver", () => {
+  const originalAudio = globalThis.Audio;
+  const buttonListeners = {};
+  const containerListeners = {};
+  const calls = { toggles: 0, seeks: [] };
+
+  class FakeAudio {
+    constructor() {
+      this.paused = true;
+      this.ended = false;
+      this.currentTime = 0;
+      this.duration = 1;
+    }
+
+    addEventListener() {}
+    pause() {}
+  }
+
+  globalThis.Audio = FakeAudio;
+  try {
+    const playButton = {
+      textContent: "",
+      addEventListener(name, listener) {
+        buttonListeners[name] = listener;
+      },
+      setAttribute() {},
+    };
+    const timeElement = { textContent: "" };
+    const playhead = { style: {} };
+    const player = new SpectrumPlayer({
+      container: {
+        addEventListener(name, listener) {
+          containerListeners[name] = listener;
+        },
+        getBoundingClientRect() {
+          return { left: 10, width: 100 };
+        },
+      },
+      engineContainer: {},
+      playhead,
+      playButton,
+      timeElement,
+      accentColor: [97, 213, 167],
+      frequencyMax: 8000,
+      height: 300,
+    });
+    player.setExternalPlayback({
+      toggle: () => {
+        calls.toggles += 1;
+      },
+      seek: (progress) => calls.seeks.push(progress),
+    });
+
+    buttonListeners.click();
+    containerListeners.click({ clientX: 85 });
+    player.renderExternalPlayback({ playing: true, currentTime: 15, duration: 60 });
+
+    assert.equal(calls.toggles, 1);
+    assert.deepEqual(calls.seeks, [0.75]);
+    assert.equal(playButton.textContent, "Ⅱ");
+    assert.equal(timeElement.textContent, "0:15 / 1:00");
+    assert.equal(playhead.style.left, "25%");
+  } finally {
+    globalThis.Audio = originalAudio;
+  }
+});
+
 test("the interface uses spectrograms instead of amplitude waveforms", async () => {
   const { readFile } = await import("node:fs/promises");
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
@@ -282,12 +425,21 @@ test("the interface uses spectrograms instead of amplitude waveforms", async () 
   assert.match(html, /id="source-spectrum"/);
   assert.match(html, /id="fm-spectrum"/);
   assert.match(html, /id="result-spectrum"/);
+  assert.match(html, /id="result-spectrum-state"/);
   assert.doesNotMatch(html, /id="[^"]*waveform/);
 });
 
 test("DSP modules stay independent from browser UI APIs", async () => {
   const { readFile } = await import("node:fs/promises");
-  const dspFiles = ["filters.js", "fm-modulator.js", "fm-demodulator.js", "rds.js", "wav.js"];
+  const dspFiles = [
+    "filters.js",
+    "fm-modulator.js",
+    "fm-demodulator.js",
+    "radio-channel.js",
+    "streaming-fm-receiver.js",
+    "rds.js",
+    "wav.js",
+  ];
 
   for (const file of dspFiles) {
     const source = await readFile(new URL(`../src/${file}`, import.meta.url), "utf8");
@@ -309,7 +461,11 @@ test("source code and interface copy are English", async () => {
     "fm-modulator.js",
     "main.js",
     "recorder.js",
+    "radio-channel.js",
+    "live-radio-receiver.js",
+    "live-receiver-worklet.js",
     "rds.js",
+    "streaming-fm-receiver.js",
     "ui.js",
     "wav.js",
     "spectrum.js",
