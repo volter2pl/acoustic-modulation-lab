@@ -69,11 +69,17 @@ modulação selecionado. AM permite uma profundidade de 0% a 150%, incluindo a
 sobremodulação intencional. FM permite ajustar o desvio da portadora e adicionar
 opcionalmente dados PS ou RadioText em escala.
 
-O modo **Faixa de rádio** combina três estações independentes em 5, 12 e 19 kHz
-em um único arquivo de áudio. Cada estação pode usar um programa e um nível de
-sinal diferentes. O receptor pode ser sintonizado continuamente enquanto a
-faixa compartilhada continua tocando; assim, mover o dial troca de estação em
-tempo real.
+O modo **Faixa de rádio** combina três estações independentes em um único
+arquivo de áudio. Suas portadoras ficam em 5, 12 e 19 kHz por padrão. Cada
+estação tem seu próprio programa, nível de sinal, frequência da portadora de 4
+a 20 kHz em passos de 0,1 kHz e fase no receptor de 0° a 345° em passos de 15°.
+O receptor pode ser sintonizado continuamente enquanto a faixa compartilhada
+continua tocando; assim, mover o dial troca de estação em tempo real.
+
+As portadoras podem ser aproximadas ou ajustadas para a mesma frequência.
+Canais sobrepostos interferem e não podem ser separados apenas pela sintonia.
+Para sinais cocanal iguais, a fase relativa determina se suas formas de onda se
+reforçam ou se cancelam.
 
 O espectrograma recuperado e o arquivo WAV disponível para download são
 capturas feitas na última frequência analisada. O áudio ao vivo acompanha

@@ -97,7 +97,8 @@ de l’émetteur.
 
 ## Plusieurs stations AM
 
-Le mode bande radio crée trois stations AM conventionnelles :
+Le mode bande radio crée trois stations AM conventionnelles. Leurs porteuses
+par défaut sont représentées ci-dessous :
 
 ```text
 5 kHz AM  ─┐
@@ -106,9 +107,17 @@ Le mode bande radio crée trois stations AM conventionnelles :
 ```
 
 Chaque programme est limité à 2 kHz et transmis à une profondeur de 80 %. Une
-station occupe donc environ 4 kHz, ce qui maintient un espacement entre les
-porteuses voisines. Le niveau des trois formes d’onde est réduit avant leur
-addition afin que le fichier combiné reste sous le seuil d’écrêtage.
+station occupe donc environ 4 kHz. Chaque station permet de régler son niveau
+de signal, sa porteuse de 4 à 20 kHz par pas de 0,1 kHz et sa phase au récepteur
+de 0° à 345° par pas de 15°. Le niveau des trois formes d’onde est réduit avant
+leur addition afin que le fichier combiné reste sous le seuil d’écrêtage.
+
+Les porteuses par défaut laissent un espacement entre les canaux voisins. Les
+rapprocher fait se chevaucher leurs bandes latérales. Les stations sur une même
+porteuse ne peuvent pas être séparées par l’accord ; leurs formes d’onde
+s’additionnent directement. Des signaux cocanaux identiques se renforcent avec
+une phase relative de 0° et peuvent s’annuler à 180°. Avec des programmes
+différents, l’annulation n’est généralement que partielle.
 
 Le récepteur en direct laisse défiler la chronologie du fichier commun tandis
 que son oscillateur local suit **Accord du récepteur**. Le mélange ramène la

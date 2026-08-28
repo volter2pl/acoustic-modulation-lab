@@ -72,11 +72,18 @@ gewählten Modulationsart bereit. Bei AM lässt sich der Modulationsgrad von 0%
 bis 150% einstellen, einschließlich absichtlicher Übermodulation. Bei FM lassen
 sich Frequenzhub sowie optional skalierte PS- oder RadioText-Daten einstellen.
 
-Der Modus **Frequenzband** kombiniert drei unabhängige Sender bei 5, 12 und
-19 kHz in einer Audiodatei. Jeder Sender kann ein anderes Programm und einen
-anderen Signalpegel verwenden. Während das gemeinsame Frequenzband weiterläuft,
-kann der Empfänger stufenlos abgestimmt werden. Das Verschieben des Reglers
-wechselt den Sender deshalb in Echtzeit.
+Der Modus **Frequenzband** kombiniert drei unabhängige Sender in einer
+Audiodatei. Ihre Träger liegen standardmäßig bei 5, 12 und 19 kHz. Jeder Sender
+hat ein eigenes Programm, einen Signalpegel, eine Trägerfrequenz von 4 bis
+20 kHz in 0,1-kHz-Schritten und eine Phase am Empfänger von 0° bis 345° in
+15°-Schritten. Während das gemeinsame Frequenzband weiterläuft, kann der
+Empfänger stufenlos abgestimmt werden. Das Verschieben des Reglers wechselt den
+Sender deshalb in Echtzeit.
+
+Träger können dicht nebeneinander oder auf dieselbe Frequenz gesetzt werden.
+Überlappende Kanäle interferieren dann und lassen sich nicht allein durch
+Abstimmung trennen. Bei gleichen Sendern auf demselben Kanal bestimmt die
+relative Phase, ob sich ihre Wellenformen verstärken oder auslöschen.
 
 Das wiedergewonnene Spektrogramm und die herunterladbare WAV-Datei sind
 Momentaufnahmen der zuletzt analysierten Frequenz. Das Live-Audio folgt dem

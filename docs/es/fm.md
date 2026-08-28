@@ -118,8 +118,9 @@ que pueda decodificar un receptor RDS comercial.
 
 ## Varias emisoras FM
 
-El modo de banda de radio combina portadoras en 5, 12 y 19 kHz. Cada emisora
-utiliza una desviación de ±0,75 kHz y una banda de programa de 2 kHz:
+El modo de banda de radio combina tres emisoras cuyas portadoras están en 5, 12
+y 19 kHz de forma predeterminada. Cada emisora utiliza una desviación de
+±0,75 kHz y una banda de programa de 2 kHz:
 
 ```text
 5 kHz FM  ─┐
@@ -127,10 +128,19 @@ utiliza una desviación de ±0,75 kHz y una banda de programa de 2 kHz:
 19 kHz FM ─┘
 ```
 
-El ancho de canal estimado es de unos 5,5 kHz, lo que deja separación entre las
-emisoras. El receptor en directo cambia continuamente su oscilador local
-mientras se reproduce la banda común, por lo que la sintonización se comporta
-como el dial de una radio.
+El ancho de canal estimado es de unos 5,5 kHz. Cada emisora permite ajustar su
+nivel de señal, una portadora de 4 a 20 kHz en pasos de 0,1 kHz y la fase en el
+receptor de 0° a 345° en pasos de 15°. La disposición predeterminada deja
+separación entre las emisoras. El receptor en directo cambia continuamente su
+oscilador local mientras se reproduce la banda común, por lo que la
+sintonización se comporta como el dial de una radio.
+
+Acercar las portadoras hace que se superpongan sus espectros ocupados. Las
+emisoras situadas en la misma portadora no pueden separarse mediante la
+sintonización; el discriminador recibe su suma vectorial. La fase relativa
+controla si las formas de onda cocanal iguales se refuerzan o se cancelan,
+mientras que programas diferentes suelen producir interferencia y distorsión
+variables.
 
 RDS está desactivado en el modo de banda de radio. En el modelo a escala 1:8,
 una emisora RDS ocupa aproximadamente 17,2 kHz; no cabrían varios canales RDS

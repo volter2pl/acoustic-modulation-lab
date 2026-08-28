@@ -96,7 +96,8 @@ gdy faza lokalnego generatora nie jest zgodna z fazą nadajnika.
 
 ## Kilka stacji AM
 
-Tryb pasma radiowego tworzy trzy klasyczne stacje AM:
+Tryb pasma radiowego tworzy trzy klasyczne stacje AM. Poniżej pokazano domyślne
+częstotliwości nośne:
 
 ```text
 AM 5 kHz  ─┐
@@ -105,9 +106,16 @@ AM 19 kHz ─┘
 ```
 
 Każdy program jest ograniczony do 2 kHz i transmitowany z głębokością 80%.
-Jedna stacja zajmuje więc około 4 kHz, pozostawiając odstęp między sąsiednimi
-nośnymi. Przed zsumowaniem poziomy trzech sygnałów są zmniejszane, aby wspólny
-plik nie został przesterowany.
+Jedna stacja zajmuje więc około 4 kHz. Dla każdej stacji można ustawić poziom
+sygnału, nośną od 4 do 20 kHz z krokiem 0,1 kHz oraz fazę w punkcie odbioru od
+0° do 345° z krokiem 15°. Przed zsumowaniem poziomy trzech sygnałów są
+zmniejszane, aby wspólny plik nie został przesterowany.
+
+Domyślne nośne pozostawiają odstęp między sąsiednimi kanałami. Ich zbliżenie
+powoduje nakładanie wstęg bocznych. Stacji na tej samej nośnej nie da się
+rozdzielić strojeniem — ich przebiegi sumują się bezpośrednio. Jednakowe sygnały
+współkanałowe wzmacniają się przy względnej fazie 0° i mogą wygasić przy 180°.
+Dla różnych programów wygaszenie jest zwykle tylko częściowe.
 
 Odbiornik na żywo utrzymuje bieżącą pozycję wspólnego pliku, a jego lokalny
 generator podąża za suwakiem **Receiver tuning**. Mieszanie przenosi wybraną

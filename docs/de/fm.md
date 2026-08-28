@@ -120,8 +120,9 @@ kann.
 
 ## Mehrere FM-Sender
 
-Der Frequenzbandmodus kombiniert Träger bei 5, 12 und 19 kHz. Jeder Sender
-verwendet einen Frequenzhub von ±0,75 kHz und ein 2-kHz-Programmband:
+Der Frequenzbandmodus kombiniert drei Sender, deren Träger standardmäßig bei 5,
+12 und 19 kHz liegen. Jeder Sender verwendet einen Frequenzhub von ±0,75 kHz
+und ein 2-kHz-Programmband:
 
 ```text
 5 kHz FM  ─┐
@@ -129,10 +130,19 @@ verwendet einen Frequenzhub von ±0,75 kHz und ein 2-kHz-Programmband:
 19 kHz FM ─┘
 ```
 
-Die geschätzte Kanalbreite beträgt ungefähr 5,5 kHz, sodass zwischen den
-Sendern Abstand bleibt. Der Live-Empfänger verändert seinen lokalen Oszillator
-fortlaufend, während das gemeinsame Frequenzband weiterspielt. Die Abstimmung
-verhält sich dadurch wie das Drehen eines Radioknopfs.
+Die geschätzte Kanalbreite beträgt ungefähr 5,5 kHz. Für jeden Sender lassen
+sich Signalpegel, Trägerfrequenz von 4 bis 20 kHz in 0,1-kHz-Schritten und
+Phase am Empfänger von 0° bis 345° in 15°-Schritten einstellen. Die
+Standardanordnung lässt Abstand zwischen den Sendern. Der Live-Empfänger
+verändert seinen lokalen Oszillator fortlaufend, während das gemeinsame
+Frequenzband weiterspielt. Die Abstimmung verhält sich dadurch wie das Drehen
+eines Radioknopfs.
+
+Werden die Träger angenähert, überlappen ihre belegten Spektren. Sender auf
+demselben Träger lassen sich nicht durch Abstimmung trennen; der Diskriminator
+empfängt ihre Vektorsumme. Die relative Phase bestimmt, ob sich gleiche
+Wellenformen auf demselben Kanal verstärken oder auslöschen. Verschiedene
+Programme erzeugen dagegen meist wechselnde Interferenzen und Verzerrungen.
 
 RDS ist im Frequenzbandmodus deaktiviert. Im 1:8-Modell belegt ein einzelner
 RDS-Sender ungefähr 17,2 kHz; mehrere realistisch modellierte RDS-Kanäle würden

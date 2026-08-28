@@ -111,8 +111,8 @@ receiver can decode.
 
 ## Several FM stations
 
-Radio-band mode combines carriers at 5, 12, and 19 kHz. Each station uses
-±0.75 kHz deviation and a 2 kHz programme band:
+Radio-band mode combines three stations whose carriers default to 5, 12, and
+19 kHz. Each station uses ±0.75 kHz deviation and a 2 kHz programme band:
 
 ```text
 5 kHz FM  ─┐
@@ -120,9 +120,17 @@ Radio-band mode combines carriers at 5, 12, and 19 kHz. Each station uses
 19 kHz FM ─┘
 ```
 
-The estimated channel width is about 5.5 kHz, leaving separation between
+The estimated channel width is about 5.5 kHz. Each station exposes its signal
+level, a 4–20 kHz carrier in 0.1 kHz steps, and its phase at the receiver from
+0° to 345° in 15° steps. The default arrangement leaves separation between
 stations. The live receiver continuously changes its local oscillator while
 the common band keeps playing, so tuning behaves like turning a radio dial.
+
+Moving carriers closer makes their occupied spectra overlap. Stations placed
+on the same carrier cannot be separated by tuning; the discriminator receives
+their vector sum. Relative phase controls how identical co-channel waveforms
+reinforce or cancel, while different programmes generally produce changing
+interference and distortion.
 
 RDS is disabled in radio-band mode. In the 1:8 model, one RDS station occupies
 approximately 17.2 kHz; several honest RDS channels would not fit in the

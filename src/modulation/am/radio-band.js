@@ -14,6 +14,7 @@ export function createAmRadioBand(
     carriers = AM_STATION_CARRIERS,
     modulationDepth = AM_BAND_MODULATION_DEPTH,
     levels = messages.map(() => 1),
+    phases = messages.map(() => 0),
   } = {},
 ) {
   if (!messages.length || messages.length !== carriers.length) {
@@ -33,6 +34,7 @@ export function createAmRadioBand(
         carrier,
         modulationDepth,
         carrierAmplitude * Math.max(0, Math.min(1, levels[index] ?? 1)),
+        phases[index] ?? 0,
       ),
   );
   const channel = new Float32Array(length);

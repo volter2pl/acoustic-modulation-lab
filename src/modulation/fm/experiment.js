@@ -146,8 +146,15 @@ export const FM_EXPERIMENT = Object.freeze({
     return prepareMessage(audioBuffer, RADIO_BAND_MESSAGE_BANDWIDTH, 8);
   },
 
-  createBand(messages, sampleRate, levels) {
-    return createRadioBand(messages, sampleRate, { levels });
+  createBand(
+    messages,
+    sampleRate,
+    levels,
+    carriers,
+    phasesDegrees = messages.map(() => 0),
+  ) {
+    const phases = phasesDegrees.map((phase) => (phase * Math.PI) / 180);
+    return createRadioBand(messages, sampleRate, { levels, carriers, phases });
   },
 
   receiveBand(signal, sampleRate, tunedCarrier) {

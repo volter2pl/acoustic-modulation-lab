@@ -11,18 +11,27 @@ export const AM_CARRIER_AMPLITUDE = 0.38;
  * zero, allowing the experiment to demonstrate envelope-detector distortion.
  */
 export class AmOscillator {
-  constructor(sampleRate, carrier, modulationDepth, carrierAmplitude = AM_CARRIER_AMPLITUDE) {
+  constructor(
+    sampleRate,
+    carrier,
+    modulationDepth,
+    carrierAmplitude = AM_CARRIER_AMPLITUDE,
+    initialPhase = 0,
+  ) {
     if (sampleRate <= 0 || carrier <= 0 || modulationDepth < 0 || carrierAmplitude <= 0) {
       throw new RangeError("AM transmitter parameters must be valid and non-negative.");
     }
     if (carrier >= sampleRate / 2) {
       throw new RangeError("The carrier exceeds the Nyquist limit.");
     }
+    if (!Number.isFinite(initialPhase)) {
+      throw new RangeError("The initial phase must be finite.");
+    }
 
     this.modulationDepth = modulationDepth;
     this.carrierAmplitude = carrierAmplitude;
     this.phaseStep = (2 * Math.PI * carrier) / sampleRate;
-    this.phase = 0;
+    this.phase = ((initialPhase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   }
 
   process(messageSample) {
@@ -40,6 +49,7 @@ export function modulateAM(
   carrier,
   modulationDepth,
   carrierAmplitude = AM_CARRIER_AMPLITUDE,
+  initialPhase = 0,
 ) {
   if (!(message instanceof Float32Array)) {
     throw new TypeError("The message must be a Float32Array.");
@@ -51,6 +61,7 @@ export function modulateAM(
     carrier,
     modulationDepth,
     carrierAmplitude,
+    initialPhase,
   );
   for (let index = 0; index < message.length; index += 1) {
     output[index] = oscillator.process(message[index]);

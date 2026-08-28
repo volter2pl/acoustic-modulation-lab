@@ -70,11 +70,17 @@ modulacji. Dla AM można ustawić głębokość od 0% do 150%, włącznie z celo
 przemodulowaniem. Dla FM dostępna jest dewiacja nośnej oraz opcjonalne,
 przeskalowane dane PS lub RadioText.
 
-Tryb **Radio band** łączy trzy niezależne stacje na częstotliwościach 5, 12 i
-19 kHz w jednym pliku audio. Każda stacja może korzystać z innego programu i
-poziomu sygnału. Odbiornik można przestrajać w sposób ciągły podczas odtwarzania
-wspólnego pasma, dzięki czemu przesunięcie suwaka natychmiast zmienia odbieraną
-stację.
+Tryb **Radio band** łączy trzy niezależne stacje w jednym pliku audio. Ich
+nośne mają domyślnie 5, 12 i 19 kHz. Każda stacja ma własny program, poziom
+sygnału, częstotliwość nośną od 4 do 20 kHz z krokiem 0,1 kHz oraz fazę w
+punkcie odbioru od 0° do 345° z krokiem 15°. Odbiornik można przestrajać w
+sposób ciągły podczas odtwarzania wspólnego pasma, dzięki czemu przesunięcie
+suwaka natychmiast zmienia odbieraną stację.
+
+Nośne można zbliżyć do siebie lub ustawić na tej samej częstotliwości. Kanały
+zaczynają wtedy interferować i nie dają się rozdzielić samym strojeniem. Dla
+jednakowych sygnałów współkanałowych względna faza decyduje, czy przebiegi się
+wzmacniają, czy wygaszają.
 
 Spektrogram odzyskanego dźwięku i pobierany plik WAV są migawkami wykonanymi dla
 ostatnio analizowanej częstotliwości. Odsłuch na żywo od razu podąża za suwakiem

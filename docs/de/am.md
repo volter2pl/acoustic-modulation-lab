@@ -97,7 +97,8 @@ Sender übereinstimmt.
 
 ## Mehrere AM-Sender
 
-Der Frequenzbandmodus erzeugt drei konventionelle AM-Sender:
+Der Frequenzbandmodus erzeugt drei konventionelle AM-Sender. Ihre
+Standardträger sind unten dargestellt:
 
 ```text
 5 kHz AM  ─┐
@@ -106,9 +107,18 @@ Der Frequenzbandmodus erzeugt drei konventionelle AM-Sender:
 ```
 
 Jedes Programm wird auf 2 kHz begrenzt und mit einem Modulationsgrad von 80%
-übertragen. Ein Sender belegt daher ungefähr 4 kHz; zwischen benachbarten
-Trägern bleibt ein Abstand. Vor dem Addieren werden die drei Wellenformen im
-Pegel reduziert, damit die gemeinsame Datei nicht übersteuert.
+übertragen. Ein Sender belegt daher ungefähr 4 kHz. Für jeden Sender lassen
+sich Signalpegel, Trägerfrequenz von 4 bis 20 kHz in 0,1-kHz-Schritten und
+Phase am Empfänger von 0° bis 345° in 15°-Schritten einstellen. Vor dem
+Addieren werden die drei Wellenformen im Pegel reduziert, damit die gemeinsame
+Datei nicht übersteuert.
+
+Die Standardträger lassen Abstand zwischen benachbarten Kanälen. Werden sie
+angenähert, überlappen ihre Seitenbänder. Sender auf demselben Träger lassen
+sich nicht durch Abstimmung trennen; ihre Wellenformen addieren sich direkt.
+Gleiche Signale auf demselben Kanal verstärken sich bei 0° relativer Phase und
+können sich bei 180° auslöschen. Bei verschiedenen Programmen ist die
+Auslöschung normalerweise nur teilweise.
 
 Der Live-Empfänger lässt die Zeitleiste der gemeinsamen Datei weiterlaufen,
 während sein lokaler Oszillator der **Empfängerabstimmung** folgt. Durch das

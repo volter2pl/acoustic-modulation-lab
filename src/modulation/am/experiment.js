@@ -97,8 +97,15 @@ export const AM_EXPERIMENT = Object.freeze({
     return prepareMessage(audioBuffer, AM_BAND_MESSAGE_BANDWIDTH, 8);
   },
 
-  createBand(messages, sampleRate, levels) {
-    return createAmRadioBand(messages, sampleRate, { levels });
+  createBand(
+    messages,
+    sampleRate,
+    levels,
+    carriers,
+    phasesDegrees = messages.map(() => 0),
+  ) {
+    const phases = phasesDegrees.map((phase) => (phase * Math.PI) / 180);
+    return createAmRadioBand(messages, sampleRate, { levels, carriers, phases });
   },
 
   receiveBand(signal, sampleRate, tunedCarrier) {

@@ -503,22 +503,23 @@ main {
   font-size: 8px;
 }
 
-.station-level {
+.station-parameter {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 4px 8px;
   align-items: center;
+  margin-top: 8px;
   color: var(--muted);
   font-size: 9px;
 }
 
-.station-level output {
+.station-parameter output {
   color: var(--muted-strong);
   font-size: 9px;
   font-variant-numeric: tabular-nums;
 }
 
-.station-level input[type="range"] {
+.station-parameter input[type="range"] {
   grid-column: 1 / -1;
   margin: 3px 0 0;
 }

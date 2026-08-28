@@ -118,8 +118,9 @@ não uma forma que um receptor RDS comercial possa decodificar.
 
 ## Várias estações FM
 
-O modo de faixa de rádio combina portadoras em 5, 12 e 19 kHz. Cada estação usa
-um desvio de ±0,75 kHz e uma faixa de programa de 2 kHz:
+O modo de faixa de rádio combina três estações cujas portadoras ficam em 5, 12
+e 19 kHz por padrão. Cada estação usa um desvio de ±0,75 kHz e uma faixa de
+programa de 2 kHz:
 
 ```text
 5 kHz FM  ─┐
@@ -127,10 +128,18 @@ um desvio de ±0,75 kHz e uma faixa de programa de 2 kHz:
 19 kHz FM ─┘
 ```
 
-A largura estimada do canal é de aproximadamente 5,5 kHz, deixando separação
-entre as estações. O receptor ao vivo altera continuamente seu oscilador local
-enquanto a faixa comum continua tocando; assim, a sintonia se comporta como o
-dial de um rádio.
+A largura estimada do canal é de aproximadamente 5,5 kHz. Cada estação permite
+ajustar o nível de sinal, a portadora de 4 a 20 kHz em passos de 0,1 kHz e a
+fase no receptor de 0° a 345° em passos de 15°. A disposição padrão deixa
+separação entre as estações. O receptor ao vivo altera continuamente seu
+oscilador local enquanto a faixa comum continua tocando; assim, a sintonia se
+comporta como o dial de um rádio.
+
+Aproximar as portadoras faz os espectros ocupados se sobreporem. Estações na
+mesma portadora não podem ser separadas pela sintonia; o discriminador recebe a
+soma vetorial delas. A fase relativa controla se formas de onda cocanal iguais
+se reforçam ou se cancelam, enquanto programas diferentes geralmente produzem
+interferência e distorção variáveis.
 
 O RDS fica desativado no modo de faixa de rádio. No modelo em escala 1:8, uma
 estação RDS ocupa aproximadamente 17,2 kHz; vários canais RDS representados com

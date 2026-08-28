@@ -71,11 +71,18 @@ modulación seleccionado. AM permite una profundidad de 0% a 150%, incluida la
 sobremodulación intencionada. FM permite ajustar la desviación de la portadora
 y añadir opcionalmente datos PS o RadioText a escala.
 
-El modo **Banda de radio** combina tres emisoras independientes en 5, 12 y
-19 kHz dentro de un solo archivo de audio. Cada emisora puede usar un programa
-y un nivel de señal diferentes. El receptor puede sintonizarse continuamente
+El modo **Banda de radio** combina tres emisoras independientes en un solo
+archivo de audio. Sus portadoras están en 5, 12 y 19 kHz de forma
+predeterminada. Cada emisora tiene su propio programa, nivel de señal,
+frecuencia portadora de 4 a 20 kHz en pasos de 0,1 kHz y fase en el receptor de
+0° a 345° en pasos de 15°. El receptor puede sintonizarse continuamente
 mientras la banda compartida sigue reproduciéndose, por lo que mover el dial
 cambia de emisora en tiempo real.
+
+Las portadoras pueden acercarse o ajustarse a la misma frecuencia. Los canales
+superpuestos interfieren y no pueden separarse solo mediante la sintonización.
+Para señales cocanal iguales, la fase relativa determina si sus formas de onda
+se refuerzan o se cancelan.
 
 El espectrograma recuperado y el archivo WAV descargable son capturas creadas
 en la última frecuencia analizada. El audio en directo sigue inmediatamente el

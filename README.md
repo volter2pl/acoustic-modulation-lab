@@ -70,10 +70,17 @@ modulation. AM allows a depth from 0% to 150%, including intentional
 overmodulation. FM exposes carrier deviation and optional scaled PS or
 RadioText data.
 
-**Radio band** combines three independent stations at 5, 12, and 19 kHz into
-one audio file. Each station can use a different programme and signal level.
-The receiver can be tuned continuously while the shared band keeps playing, so
-moving the dial changes the station in real time.
+**Radio band** combines three independent stations into one audio file. Their
+carriers default to 5, 12, and 19 kHz. Each station has its own programme,
+signal level, carrier frequency from 4 to 20 kHz in 0.1 kHz steps, and phase at
+the receiver from 0° to 345° in 15° steps. The receiver can be tuned
+continuously while the shared band keeps playing, so moving the dial changes
+the station in real time.
+
+Carriers may be moved close together or set to the same frequency. Overlapping
+channels then interfere and cannot be separated by tuning alone. For equal
+co-channel signals, relative phase determines whether their waveforms reinforce
+or cancel one another.
 
 The recovered spectrogram and downloadable WAV are snapshots made at the last
 analyzed frequency. Live audio follows the tuning slider immediately; the

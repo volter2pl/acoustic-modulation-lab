@@ -123,8 +123,9 @@ mise à l’échelle, qu’un récepteur RDS commercial ne peut pas décoder.
 
 ## Plusieurs stations FM
 
-Le mode bande radio combine des porteuses à 5, 12 et 19 kHz. Chaque station
-utilise une déviation de ±0,75 kHz et une bande de programme de 2 kHz :
+Le mode bande radio combine trois stations dont les porteuses sont réglées par
+défaut sur 5, 12 et 19 kHz. Chaque station utilise une déviation de ±0,75 kHz
+et une bande de programme de 2 kHz :
 
 ```text
 5 kHz FM  ─┐
@@ -132,10 +133,19 @@ utilise une déviation de ±0,75 kHz et une bande de programme de 2 kHz :
 19 kHz FM ─┘
 ```
 
-La largeur de canal estimée est d’environ 5,5 kHz, ce qui maintient un
-espacement entre les stations. Le récepteur en direct change continuellement
-son oscillateur local pendant la lecture de la bande commune : l’accord se
-comporte donc comme le bouton d’un poste de radio.
+La largeur de canal estimée est d’environ 5,5 kHz. Chaque station permet de
+régler son niveau de signal, sa porteuse de 4 à 20 kHz par pas de 0,1 kHz et sa
+phase au récepteur de 0° à 345° par pas de 15°. La disposition par défaut
+maintient un espacement entre les stations. Le récepteur en direct change
+continuellement son oscillateur local pendant la lecture de la bande commune :
+l’accord se comporte donc comme le bouton d’un poste de radio.
+
+Rapprocher les porteuses fait se chevaucher leurs spectres occupés. Les
+stations placées sur une même porteuse ne peuvent pas être séparées par
+l’accord ; le discriminateur reçoit leur somme vectorielle. La phase relative
+détermine si des formes d’onde identiques sur le même canal se renforcent ou
+s’annulent, tandis que des programmes différents produisent généralement des
+interférences et une distorsion variables.
 
 Le RDS est désactivé dans le mode bande radio. Dans le modèle à l’échelle 1:8,
 une seule station RDS occupe environ 17,2 kHz ; plusieurs canaux RDS fidèles ne

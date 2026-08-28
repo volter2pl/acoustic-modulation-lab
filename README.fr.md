@@ -65,11 +65,18 @@ choisie. L’AM permet une profondeur de 0 % à 150 %, y compris une
 surmodulation volontaire. La FM permet de régler la déviation de la porteuse et
 d’ajouter éventuellement des données PS ou RadioText mises à l’échelle.
 
-Le mode **Bande radio** combine trois stations indépendantes à 5, 12 et 19 kHz
-dans un seul fichier audio. Chaque station peut utiliser un programme et un
-niveau de signal différents. Le récepteur peut être accordé en continu pendant
-la lecture de la bande commune : déplacer le curseur change donc de station en
+Le mode **Bande radio** combine trois stations indépendantes dans un seul
+fichier audio. Leurs porteuses sont réglées par défaut sur 5, 12 et 19 kHz.
+Chaque station possède son propre programme, son niveau de signal, une
+fréquence porteuse de 4 à 20 kHz par pas de 0,1 kHz et une phase au récepteur de
+0° à 345° par pas de 15°. Le récepteur peut être accordé en continu pendant la
+lecture de la bande commune : déplacer le curseur change donc de station en
 temps réel.
+
+Les porteuses peuvent être rapprochées ou réglées sur la même fréquence. Les
+canaux qui se chevauchent interfèrent et ne peuvent pas être séparés par le seul
+accord. Pour des signaux cocanaux identiques, la phase relative détermine si
+leurs formes d’onde se renforcent ou s’annulent.
 
 Le spectrogramme récupéré et le fichier WAV téléchargeable sont des instantanés
 créés à la dernière fréquence analysée. L’audio en direct suit immédiatement le

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { AcousticModulationApp } from "../src/app.js";
 import { demodulateAM } from "../src/modulation/am/demodulator.js";
 import { modulateAM } from "../src/modulation/am/modulator.js";
 import {
@@ -122,6 +123,35 @@ test("the modulator keeps its output amplitude bounded", () => {
   const encoded = modulateFM(input, 48000, 10000, 1000, 0.72);
   assert.equal(encoded.length, input.length);
   assert.ok(encoded.every((sample) => Math.abs(sample) <= 0.720001));
+});
+
+test("initial carrier phase does not change single-station recovery", () => {
+  const sampleRate = 48000;
+  const message = Float32Array.from(
+    { length: sampleRate },
+    (_, index) => 0.7 * Math.sin((2 * Math.PI * 440 * index) / sampleRate),
+  );
+  const fm = demodulateFM(
+    modulateFM(message, sampleRate, 12000, 1000, 0.72, Math.PI * 0.73),
+    sampleRate,
+    12000,
+    1000,
+  );
+  const am = demodulateAM(
+    modulateAM(message, sampleRate, 12000, 0.8, 0.38, Math.PI * 1.37),
+    sampleRate,
+    12000,
+  );
+
+  let fmScore = -1;
+  let amScore = -1;
+  for (let lag = -160; lag <= 160; lag += 1) {
+    fmScore = Math.max(fmScore, correlation(message, fm, sampleRate * 0.08, lag));
+    amScore = Math.max(amScore, correlation(message, am, sampleRate * 0.08, lag));
+  }
+
+  assert.ok(fmScore > 0.97, `expected FM correlation > 0.97, received ${fmScore}`);
+  assert.ok(amScore > 0.99, `expected AM correlation > 0.99, received ${amScore}`);
 });
 
 test("conventional AM and its envelope receiver recover a sinusoidal message", () => {
@@ -338,6 +368,115 @@ test("a radio band follows the longest programme and remains below clipping", ()
 
   assert.equal(band.length, 36000);
   assert.ok(band.every((sample) => Math.abs(sample) <= 0.780001));
+});
+
+test("radio-band carriers can be positioned independently", () => {
+  const sampleRate = 48000;
+  const carriers = [6000, 11000, 16000];
+  const frequencies = [300, 700, 1300];
+  const messages = frequencies.map((frequency) =>
+    Float32Array.from(
+      { length: sampleRate * 2 },
+      (_, index) => 0.7 * Math.sin((2 * Math.PI * frequency * index) / sampleRate),
+    ),
+  );
+  const band = createRadioBand(messages, sampleRate, { carriers });
+
+  carriers.forEach((carrier, index) => {
+    const received = receiveRadioStation(band, sampleRate, carrier);
+    assert.ok(
+      toneAmplitude(received, sampleRate, frequencies[index], 0.2, 1.8) > 0.55,
+    );
+  });
+});
+
+test("co-channel phase controls addition and cancellation at the receiver", () => {
+  const sampleRate = 48000;
+  const length = sampleRate / 2;
+  const silence = new Float32Array(length);
+  const programme = Float32Array.from(
+    { length },
+    (_, index) => 0.6 * Math.sin((2 * Math.PI * 440 * index) / sampleRate),
+  );
+  const amInPhase = createAmRadioBand([silence, silence], sampleRate, {
+    carriers: [5000, 5000],
+    phases: [0, 0],
+  });
+  const amOpposed = createAmRadioBand([silence, silence], sampleRate, {
+    carriers: [5000, 5000],
+    phases: [0, Math.PI],
+  });
+  const fmInPhase = createRadioBand([programme, programme], sampleRate, {
+    carriers: [5000, 5000],
+    phases: [0, 0],
+  });
+  const fmOpposed = createRadioBand([programme, programme], sampleRate, {
+    carriers: [5000, 5000],
+    phases: [0, Math.PI],
+  });
+
+  assert.ok(peakBetween(amInPhase, sampleRate, 0.05, 0.45) > 0.4);
+  assert.ok(peakBetween(amOpposed, sampleRate, 0.05, 0.45) < 0.00001);
+  assert.ok(peakBetween(fmInPhase, sampleRate, 0.05, 0.45) > 0.7);
+  assert.ok(peakBetween(fmOpposed, sampleRate, 0.05, 0.45) < 0.00001);
+});
+
+test("experiment adapters convert receiver phase from degrees", () => {
+  const sampleRate = 48000;
+  const silence = new Float32Array(sampleRate / 10);
+  const carriers = [5000, 5000];
+  const levels = [1, 1];
+
+  for (const modulation of ["am", "fm"]) {
+    const band = MODULATION_EXPERIMENTS[modulation].createBand(
+      [silence, silence],
+      sampleRate,
+      levels,
+      carriers,
+      [0, 180],
+    );
+    assert.ok(
+      peakBetween(band, sampleRate, 0.01, 0.09) < 0.00001,
+      `${modulation.toUpperCase()} should convert 180 degrees to pi radians`,
+    );
+  }
+});
+
+test("radio-band snapshots become stale after any station parameter changes", () => {
+  const app = Object.create(AcousticModulationApp.prototype);
+  app.state = {
+    experimentMode: "band",
+    modulationType: "fm",
+    signalModulation: "fm",
+    signalOrigin: "generated-band",
+    bandRevision: 4,
+    signalParameters: {
+      bandRevision: 4,
+      levels: [1, 0.75, 0.5],
+      carriers: [5000, 12000, 19000],
+      phases: [0, 90, 180],
+    },
+  };
+  const controls = {
+    levels: [1, 0.75, 0.5],
+    carriers: [5000, 12000, 19000],
+    phases: [0, 90, 180],
+  };
+  app.ui = {
+    getBandLevels: () => controls.levels,
+    getBandCarriers: () => controls.carriers,
+    getBandPhases: () => controls.phases,
+  };
+
+  assert.equal(app.isGeneratedSignalStale(), false);
+  controls.carriers = [5000, 12100, 19000];
+  assert.equal(app.isGeneratedSignalStale(), true);
+  controls.carriers = [5000, 12000, 19000];
+  controls.phases = [0, 105, 180];
+  assert.equal(app.isGeneratedSignalStale(), true);
+  controls.phases = [0, 90, 180];
+  controls.levels = [1, 0.7, 0.5];
+  assert.equal(app.isGeneratedSignalStale(), true);
 });
 
 test("an offline FM receiver does not normalize a weak station to full level", () => {

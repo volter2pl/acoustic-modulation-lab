@@ -115,8 +115,8 @@ nie zdekoduje komercyjny odbiornik RDS.
 
 ## Kilka stacji FM
 
-Tryb pasma radiowego łączy nośne 5, 12 i 19 kHz. Każda stacja wykorzystuje
-dewiację ±0,75 kHz oraz pasmo programu 2 kHz:
+Tryb pasma radiowego łączy trzy stacje o domyślnych nośnych 5, 12 i 19 kHz.
+Każda stacja wykorzystuje dewiację ±0,75 kHz oraz pasmo programu 2 kHz:
 
 ```text
 FM 5 kHz  ─┐
@@ -124,10 +124,18 @@ FM 12 kHz ─┼─→ jedno akustyczne pasmo radiowe
 FM 19 kHz ─┘
 ```
 
-Szacowana szerokość kanału wynosi około 5,5 kHz, co pozostawia odstęp pomiędzy
-stacjami. Odbiornik na żywo w sposób ciągły zmienia częstotliwość lokalnego
-generatora podczas odtwarzania wspólnego pasma, dlatego strojenie zachowuje się
-jak obracanie pokrętła radia.
+Szacowana szerokość kanału wynosi około 5,5 kHz. Dla każdej stacji można
+ustawić poziom sygnału, nośną od 4 do 20 kHz z krokiem 0,1 kHz oraz fazę w
+punkcie odbioru od 0° do 345° z krokiem 15°. Domyślny układ pozostawia odstęp
+pomiędzy stacjami. Odbiornik na żywo w sposób ciągły zmienia częstotliwość
+lokalnego generatora podczas odtwarzania wspólnego pasma, dlatego strojenie
+zachowuje się jak obracanie pokrętła radia.
+
+Zbliżenie nośnych powoduje nakładanie zajmowanych widm. Stacji umieszczonych na
+tej samej nośnej nie da się rozdzielić strojeniem — dyskryminator otrzymuje ich
+sumę wektorową. Względna faza decyduje o wzmacnianiu lub wygaszaniu jednakowych
+przebiegów współkanałowych, natomiast różne programy zwykle powodują zmienne
+interferencje i zniekształcenia.
 
 RDS jest wyłączony w trybie pasma radiowego. W modelu 1:8 jedna stacja z RDS
 zajmuje około 17,2 kHz; kilka uczciwie odwzorowanych kanałów RDS nie zmieściłoby

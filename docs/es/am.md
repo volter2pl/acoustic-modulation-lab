@@ -97,7 +97,8 @@ transmisor.
 
 ## Varias emisoras AM
 
-El modo de banda de radio crea tres emisoras AM convencionales:
+El modo de banda de radio crea tres emisoras AM convencionales. Sus portadoras
+predeterminadas se muestran a continuación:
 
 ```text
 5 kHz AM  ─┐
@@ -106,9 +107,18 @@ El modo de banda de radio crea tres emisoras AM convencionales:
 ```
 
 Cada programa está limitado a 2 kHz y se transmite con una profundidad del
-80%. Por tanto, una emisora ocupa aproximadamente 4 kHz y queda separación
-entre portadoras vecinas. El nivel de las tres formas de onda se reduce antes
-de sumarlas para evitar que el archivo combinado sature.
+80%. Por tanto, una emisora ocupa aproximadamente 4 kHz. Cada emisora permite
+ajustar su nivel de señal, una portadora de 4 a 20 kHz en pasos de 0,1 kHz y la
+fase en el receptor de 0° a 345° en pasos de 15°. El nivel de las tres formas
+de onda se reduce antes de sumarlas para evitar que el archivo combinado
+sature.
+
+Las portadoras predeterminadas dejan separación entre canales vecinos.
+Acercarlas hace que sus bandas laterales se superpongan. Las emisoras en una
+misma portadora no pueden separarse mediante la sintonización; sus formas de
+onda se suman directamente. Las señales cocanal iguales se refuerzan con una
+fase relativa de 0° y pueden cancelarse a 180°. Con programas diferentes, la
+cancelación suele ser solo parcial.
 
 El receptor en directo mantiene en marcha la línea temporal del archivo común
 mientras su oscilador local sigue la **Sintonización del receptor**. La mezcla

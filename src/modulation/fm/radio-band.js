@@ -20,6 +20,7 @@ export function createRadioBand(
     carriers = RADIO_STATION_CARRIERS,
     deviation = RADIO_BAND_DEVIATION,
     levels = messages.map(() => 1),
+    phases = messages.map(() => 0),
   } = {},
 ) {
   if (!messages.length || messages.length !== carriers.length) {
@@ -38,6 +39,7 @@ export function createRadioBand(
         carrier,
         deviation,
         stationLevel * Math.max(0, Math.min(1, levels[index] ?? 1)),
+        phases[index] ?? 0,
       ),
   );
   const channel = new Float32Array(length);

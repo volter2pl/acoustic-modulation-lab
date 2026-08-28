@@ -93,7 +93,8 @@ transmitter.
 
 ## Several AM stations
 
-Radio-band mode creates three conventional AM stations:
+Radio-band mode creates three conventional AM stations. Their default carriers
+are shown below:
 
 ```text
 5 kHz AM  ─┐
@@ -102,9 +103,16 @@ Radio-band mode creates three conventional AM stations:
 ```
 
 Each programme is limited to 2 kHz and transmitted at 80% depth. A station
-therefore occupies approximately 4 kHz, leaving separation between neighboring
-carriers. The three waveforms are reduced in level before addition so their
-combined file remains below clipping.
+therefore occupies approximately 4 kHz. Each station exposes its signal level,
+a 4–20 kHz carrier in 0.1 kHz steps, and its phase at the receiver from 0° to
+345° in 15° steps. The three waveforms are reduced in level before addition so
+their combined file remains below clipping.
+
+The default carriers leave separation between neighboring channels. Moving
+them closer makes their sidebands overlap. Stations on the same carrier cannot
+be separated by tuning; their waveforms add directly. Equal co-channel signals
+reinforce at 0° relative phase and can cancel at 180°. With different
+programmes, cancellation is generally only partial.
 
 The live receiver keeps the common file timeline running while its local
 oscillator follows **Receiver tuning**. Mixing moves the selected station to

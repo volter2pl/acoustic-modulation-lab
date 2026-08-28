@@ -52,6 +52,7 @@ const ELEMENT_IDS = [
   "band-parameter-value",
   "band-feature-label",
   "band-feature-value",
+  "band-station-plan",
   "encode-button",
   "signal-file-button",
   "signal-file",
@@ -173,6 +174,14 @@ export class AppUI {
     return this.bandControls.map(({ level }) => Number(level.value) / 100);
   }
 
+  getBandCarriers() {
+    return this.bandControls.map(({ carrier }) => Number(carrier.value));
+  }
+
+  getBandPhases() {
+    return this.bandControls.map(({ phase }) => Number(phase.value));
+  }
+
   getReceiverCarrier() {
     return Number(this.elements["receiver-carrier"].value);
   }
@@ -191,6 +200,36 @@ export class AppUI {
       button.textContent = this.formatKhz(Number(button.dataset.carrier));
       button.classList.toggle("is-active", Number(button.dataset.carrier) === carrier);
     }
+  }
+
+  renderBandPlan() {
+    this.elements["band-station-plan"].textContent = this.getBandCarriers()
+      .map((carrier) => this.formatKhz(carrier))
+      .join(" · ");
+  }
+
+  renderBandStationParameters(index) {
+    const control = this.bandControls[index];
+    if (!control) return;
+    const carrier = Number(control.carrier.value);
+    const carrierValue = this.i18n.number(carrier / 1000);
+    control.frequency.textContent = `${carrierValue} kHz`;
+    control.carrierOutput.textContent = `${carrierValue} kHz`;
+    control.phaseOutput.textContent = `${control.phase.value}°`;
+    control.select.setAttribute(
+      "aria-label",
+      this.t("aria.sourceForStation", { frequency: carrierValue }),
+    );
+    control.level.setAttribute(
+      "aria-label",
+      this.t("aria.signalLevelForStation", { frequency: carrierValue }),
+    );
+    const preset = this.elements["receiver-controls"].querySelector(
+      `[data-station-index="${index}"]`,
+    );
+    if (preset) preset.dataset.carrier = String(carrier);
+    this.renderBandPlan();
+    this.renderReceiverTuning();
   }
 
   setModulation(modulation) {
@@ -364,10 +403,12 @@ export class AppUI {
     for (const button of this.elements["example-list"].querySelectorAll("button")) {
       button.disabled = busy;
     }
-    for (const { select, file, level } of this.bandControls) {
+    for (const { select, file, level, carrier, phase } of this.bandControls) {
       select.disabled = busy;
       file.disabled = busy;
       level.disabled = busy;
+      carrier.disabled = busy;
+      phase.disabled = busy;
     }
     this.elements["mode-single"].disabled = busy;
     this.elements["mode-band"].disabled = busy;
@@ -572,7 +613,7 @@ export class AppUI {
       fileRow.append(name, meta);
 
       const levelRow = document.createElement("label");
-      levelRow.className = "station-level";
+      levelRow.className = "station-parameter";
       const levelCopy = document.createElement("span");
       levelCopy.textContent = this.t("ui.signalLevel");
       const levelOutput = document.createElement("output");
@@ -589,6 +630,34 @@ export class AppUI {
       );
       levelRow.append(levelCopy, levelOutput, level);
 
+      const carrierRow = document.createElement("label");
+      carrierRow.className = "station-parameter";
+      const carrierCopy = document.createElement("span");
+      carrierCopy.textContent = this.t("ui.carrierFrequency");
+      const carrierOutput = document.createElement("output");
+      carrierOutput.textContent = `${carrierValue} kHz`;
+      const carrierInput = document.createElement("input");
+      carrierInput.type = "range";
+      carrierInput.min = "4000";
+      carrierInput.max = "20000";
+      carrierInput.step = "100";
+      carrierInput.value = String(carrier);
+      carrierRow.append(carrierCopy, carrierOutput, carrierInput);
+
+      const phaseRow = document.createElement("label");
+      phaseRow.className = "station-parameter";
+      const phaseCopy = document.createElement("span");
+      phaseCopy.textContent = this.t("ui.phaseAtReceiver");
+      const phaseOutput = document.createElement("output");
+      phaseOutput.textContent = "0°";
+      const phase = document.createElement("input");
+      phase.type = "range";
+      phase.min = "0";
+      phase.max = "345";
+      phase.step = "15";
+      phase.value = "0";
+      phaseRow.append(phaseCopy, phaseOutput, phase);
+
       const file = document.createElement("input");
       file.type = "file";
       file.accept = "audio/*";
@@ -599,6 +668,11 @@ export class AppUI {
         file,
         level,
         levelOutput,
+        carrier: carrierInput,
+        carrierOutput,
+        phase,
+        phaseOutput,
+        frequency,
         name,
         meta,
         sourceId: initialExample.id,
@@ -624,14 +698,23 @@ export class AppUI {
       });
       level.addEventListener("input", () => {
         levelOutput.textContent = `${level.value}%`;
-        this.handlers.onBandLevelChanged();
+        this.handlers.onBandParametersChanged();
+      });
+      carrierInput.addEventListener("input", () => {
+        this.renderBandStationParameters(stationIndex);
+        this.handlers.onBandParametersChanged();
+      });
+      phase.addEventListener("input", () => {
+        this.renderBandStationParameters(stationIndex);
+        this.handlers.onBandParametersChanged();
       });
 
-      row.append(header, fileRow, levelRow, file);
+      row.append(header, fileRow, levelRow, carrierRow, phaseRow, file);
       fragment.append(row);
     });
 
     this.elements["band-station-list"].replaceChildren(fragment);
+    this.bandControls.forEach((_, index) => this.renderBandStationParameters(index));
   }
 
   chooseFile(input) {

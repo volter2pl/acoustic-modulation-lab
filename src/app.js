@@ -61,7 +61,7 @@ export class AcousticModulationApp {
         onBandExample: (index, example) => this.loadBandExample(index, example),
         onBandFile: (index, file) =>
           this.loadBandStation(index, file, file.name, "custom"),
-        onBandLevelChanged: () => this.bandParametersChanged(),
+        onBandParametersChanged: () => this.bandParametersChanged(),
         onReceiverTuningChanged: () => this.receiverTuningChanged(),
         onToggleLiveReceiver: () => this.toggleLiveReceiver(),
         onSeekLiveReceiver: (progress) => this.seekLiveReceiver(progress),
@@ -191,11 +191,20 @@ export class AcousticModulationApp {
     if (this.state.signalModulation !== this.state.modulationType) return true;
     if (this.isBandMode()) {
       const levels = this.ui.getBandLevels();
+      const carriers = this.ui.getBandCarriers();
+      const phases = this.ui.getBandPhases();
       return (
         this.state.signalOrigin !== "generated-band" ||
         this.state.signalParameters.bandRevision !== this.state.bandRevision ||
         levels.some(
           (level, index) => this.state.signalParameters.levels[index] !== level,
+        ) ||
+        carriers.some(
+          (carrier, index) =>
+            this.state.signalParameters.carriers[index] !== carrier,
+        ) ||
+        phases.some(
+          (phase, index) => this.state.signalParameters.phases[index] !== phase,
         )
       );
     }
@@ -495,7 +504,15 @@ export class AcousticModulationApp {
         experiment.prepareBandMessage(audioBuffer),
       );
       const levels = this.ui.getBandLevels();
-      const samples = experiment.createBand(messages, sampleRate, levels);
+      const carriers = this.ui.getBandCarriers();
+      const phases = this.ui.getBandPhases();
+      const samples = experiment.createBand(
+        messages,
+        sampleRate,
+        levels,
+        carriers,
+        phases,
+      );
       const blob = createWavBlob(samples, sampleRate);
       this.state.signal = { samples, sampleRate, duration: samples.length / sampleRate };
       this.state.signalBlob = blob;
@@ -503,6 +520,8 @@ export class AcousticModulationApp {
       this.state.signalParameters = {
         bandRevision: this.state.bandRevision,
         levels: [...levels],
+        carriers: [...carriers],
+        phases: [...phases],
       };
       this.state.signalModulation = this.state.modulationType;
       this.clearDecoded();
@@ -622,18 +641,23 @@ export class AcousticModulationApp {
   }
 
   describeTunedStation(tunedCarrier) {
-    const carriers = this.getExperiment().stationCarriers;
-    const nearestIndex = carriers.reduce(
-      (bestIndex, stationCarrier, index) =>
-        Math.abs(stationCarrier - tunedCarrier) <
-        Math.abs(carriers[bestIndex] - tunedCarrier)
-          ? index
-          : bestIndex,
-      0,
+    const carriers =
+      this.state.signalOrigin === "generated-band"
+        ? this.state.signalParameters?.carriers ?? this.ui.getBandCarriers()
+        : this.ui.getBandCarriers();
+    const distance = Math.min(
+      ...carriers.map((carrier) => Math.abs(carrier - tunedCarrier)),
     );
-    const distance = Math.abs(carriers[nearestIndex] - tunedCarrier);
+    const nearestIndices = carriers
+      .map((carrier, index) => ({ carrier, index }))
+      .filter(({ carrier }) => Math.abs(carrier - tunedCarrier) === distance)
+      .map(({ index }) => index);
     if (this.state.signalOrigin === "generated-band" && distance <= 500) {
-      return `${this.state.bandStations[nearestIndex]?.name ?? this.t("name.stationFallback")} · ${this.i18n.number(
+      const names = nearestIndices.map(
+        (index) =>
+          this.state.bandStations[index]?.name ?? this.t("name.stationFallback"),
+      );
+      return `${names.join(" + ")} · ${this.i18n.number(
         tunedCarrier / 1000,
       )} kHz`;
     }

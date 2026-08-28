@@ -97,7 +97,8 @@ do transmissor.
 
 ## Várias estações AM
 
-O modo de faixa de rádio cria três estações AM convencionais:
+O modo de faixa de rádio cria três estações AM convencionais. Suas portadoras
+padrão são mostradas abaixo:
 
 ```text
 5 kHz AM  ─┐
@@ -106,9 +107,16 @@ O modo de faixa de rádio cria três estações AM convencionais:
 ```
 
 Cada programa é limitado a 2 kHz e transmitido com profundidade de 80%. Uma
-estação ocupa, portanto, aproximadamente 4 kHz, deixando espaço entre
-portadoras vizinhas. O nível das três formas de onda é reduzido antes da soma
-para impedir que o arquivo combinado sature.
+estação ocupa, portanto, aproximadamente 4 kHz. Cada estação permite ajustar o
+nível de sinal, a portadora de 4 a 20 kHz em passos de 0,1 kHz e a fase no
+receptor de 0° a 345° em passos de 15°. O nível das três formas de onda é
+reduzido antes da soma para impedir que o arquivo combinado sature.
+
+As portadoras padrão deixam espaço entre canais vizinhos. Aproximá-las faz suas
+bandas laterais se sobreporem. Estações na mesma portadora não podem ser
+separadas pela sintonia; suas formas de onda se somam diretamente. Sinais
+cocanal iguais se reforçam com fase relativa de 0° e podem se cancelar a 180°.
+Com programas diferentes, o cancelamento costuma ser apenas parcial.
 
 O receptor ao vivo mantém a linha do tempo do arquivo comum em andamento
 enquanto seu oscilador local acompanha a **Sintonia do receptor**. A mistura

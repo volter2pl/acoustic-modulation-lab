@@ -222,7 +222,7 @@
           <div id="band-controls" class="parameter-block band-controls" hidden>
             <div class="band-plan-row">
               <span data-i18n="ui.bandStations">Stations</span>
-              <strong data-i18n="ui.stationPlan">5.0 · 12.0 · 19.0 kHz</strong>
+              <strong id="band-station-plan" data-i18n="ui.stationPlan">5.0 · 12.0 · 19.0 kHz</strong>
             </div>
             <div class="band-plan-row">
               <span id="band-parameter-label">Deviation</span>
@@ -299,9 +299,9 @@
               value="12000"
             />
             <div class="tuner-presets" aria-label="Station presets" data-i18n-aria-label="aria.stationPresets">
-              <button type="button" data-carrier="5000">5.0</button>
-              <button type="button" data-carrier="12000" class="is-active">12.0</button>
-              <button type="button" data-carrier="19000">19.0 kHz</button>
+              <button type="button" data-station-index="0" data-carrier="5000">5.0</button>
+              <button type="button" data-station-index="1" data-carrier="12000" class="is-active">12.0</button>
+              <button type="button" data-station-index="2" data-carrier="19000">19.0 kHz</button>
             </div>
             <button id="tune-button" class="button button-accent button-wide" type="button" disabled>
               <span data-i18n="ui.updateSpectrum">Update spectrum &amp; WAV</span>
